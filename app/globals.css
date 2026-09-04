@@ -116,7 +116,7 @@ textarea {
   padding: 5px 8px;
   pointer-events: none;
   position: fixed;
-  transform: translate(calc(-100% - 14px), 14px);
+  transform: translate(14px, 14px);
   z-index: 10;
 }
 
