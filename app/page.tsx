@@ -1,40 +1,47 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 const projects = [
   {
-    href: "/sorry/",
+    href: "/sorry",
     number: "01",
     title: "잘못한 점 찾기",
     description: "장면을 고르고, 사과문을 출력하는 인터랙티브 작업.",
     kind: "Static site",
   },
   {
-    href: "/nicetomeetyou/",
+    href: "https://philosophical-artistic-perspectives-chat.ai.studio",
     number: "02",
+    title: "Question Distorter",
+    description: "질문을 다른 관점의 질문으로 변환합니다. AI Studio에서 열립니다.",
+    kind: "AI Studio",
+    external: true,
+  },
+  {
+    href: "/nicetomeetyou",
+    number: "03",
     title: "만반잘부",
     description: "카메라와 함께 시작하는 짧은 인사말의 경험.",
     kind: "Camera experience",
   },
   {
-    href: "/give-me-love/",
-    number: "03",
+    href: "/give-me-love",
+    number: "04",
     title: "give me love",
     description: "키보드 위에 하트 모양을 그려 사랑을 전합니다.",
     kind: "Keyboard experience",
   },
   {
-    href: "/rgb-popups/",
-    number: "04",
+    href: "/rgb-popups",
+    number: "05",
     title: "RGB Popups",
     description: "전체화면이 아닌 작은 팝업 창 세 개로 열립니다. 창을 겹쳐 색을 섞어 보세요.",
     kind: "Popup experience",
   },
   {
-    href: "/scc-motion/",
-    number: "05",
+    href: "/scc-motion",
+    number: "06",
     title: "SCC Motion",
     description: "움직이는 SCC 타이포그래피를 만들고 내보냅니다.",
     kind: "Motion tool",
@@ -77,19 +84,12 @@ export default function ArchiveHome() {
           <a href="https://www.instagram.com/softcodingclub/" rel="noreferrer" target="_blank">
             SCC Instagram ↗
           </a>
-          <a
-            href="https://philosophical-artistic-perspectives-chat.ai.studio"
-            rel="noreferrer"
-            target="_blank"
-          >
-            Philosophical &amp; Artistic Perspectives Chat ↗
-          </a>
         </div>
       </header>
 
       <nav aria-label="프로젝트 목록" className="projectList">
         {projects.map((project) => (
-          <Link
+          <a
             aria-label={`${project.title}: ${project.description}`}
             className="projectCard"
             href={project.href}
@@ -109,6 +109,8 @@ export default function ArchiveHome() {
                   : null,
               )
             }
+            rel={project.external ? "noreferrer" : undefined}
+            target={project.external ? "_blank" : undefined}
           >
             <span className="projectNumber">{project.number}</span>
             <span className="projectInfo">
@@ -116,7 +118,7 @@ export default function ArchiveHome() {
             </span>
             <span className="projectKind">{project.kind}</span>
             <span aria-hidden="true" className="projectArrow">↗</span>
-          </Link>
+          </a>
         ))}
       </nav>
 
