@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 const projects = [
   {
@@ -46,6 +49,12 @@ const projects = [
 ];
 
 export default function ArchiveHome() {
+  const [tooltip, setTooltip] = useState<{
+    description: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
   return (
     <main className="archive">
       <header className="archiveHeader">
@@ -68,22 +77,57 @@ export default function ArchiveHome() {
           >
             LinkedIn ↗
           </a>
+          <a href="https://softcodingclub.vercel.app/" rel="noreferrer" target="_blank">
+            Soft Coding Club ↗
+          </a>
+          <a href="https://www.instagram.com/softcodingclub/" rel="noreferrer" target="_blank">
+            SCC Instagram ↗
+          </a>
         </div>
       </header>
 
       <nav aria-label="프로젝트 목록" className="projectList">
         {projects.map((project) => (
-          <Link className="projectCard" href={project.href} key={project.href}>
+          <Link
+            aria-label={`${project.title}: ${project.description}`}
+            className="projectCard"
+            href={project.href}
+            key={project.href}
+            onMouseEnter={(event) =>
+              setTooltip({
+                description: project.description,
+                x: event.clientX,
+                y: event.clientY,
+              })
+            }
+            onMouseLeave={() => setTooltip(null)}
+            onMouseMove={(event) =>
+              setTooltip((current) =>
+                current
+                  ? { ...current, description: project.description, x: event.clientX, y: event.clientY }
+                  : null,
+              )
+            }
+          >
             <span className="projectNumber">{project.number}</span>
             <span className="projectInfo">
               <span className="projectTitle">{project.title}</span>
-              <span className="projectDescription">{project.description}</span>
             </span>
             <span className="projectKind">{project.kind}</span>
             <span aria-hidden="true" className="projectArrow">↗</span>
           </Link>
         ))}
       </nav>
+
+      {tooltip ? (
+        <aside
+          aria-hidden="true"
+          className="projectTooltip"
+          style={{ left: tooltip.x, top: tooltip.y }}
+        >
+          {tooltip.description}
+        </aside>
+      ) : null}
 
       <footer className="archiveFooter">© Namkyu Yeo / Soft Coding Club</footer>
     </main>

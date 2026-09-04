@@ -47,7 +47,7 @@ textarea {
 
 .archive,
 .archive * {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: "Gothic A1", sans-serif;
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0;
@@ -102,8 +102,15 @@ textarea {
   gap: 2px;
 }
 
-.projectDescription {
-  max-width: 540px;
+.projectTooltip {
+  background: var(--ink);
+  color: var(--bg);
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 5px 8px;
+  pointer-events: none;
+  position: fixed;
+  transform: translate(calc(-100% - 14px), 14px);
+  z-index: 10;
 }
 
 .archiveFooter {
