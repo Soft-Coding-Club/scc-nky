@@ -39,101 +39,90 @@ textarea {
 }
 
 .archive {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   margin: 0 auto;
-  max-width: 1120px;
+  max-width: 960px;
   min-height: 100vh;
-  padding: clamp(24px, 5vw, 64px);
+  padding: 24px;
+}
+
+.archive,
+.archive * {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.45;
 }
 
 .archiveHeader {
-  padding-bottom: clamp(60px, 12vw, 160px);
-}
-
-.archiveEyebrow,
-.projectNumber,
-.projectKind,
-.archiveFooter {
-  color: var(--secondary);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.archiveEyebrow {
-  margin: 0 0 18px;
-}
-
-.archive h1 {
-  font-size: clamp(64px, 12vw, 152px);
-  font-weight: 300;
-  letter-spacing: -0.075em;
-  line-height: 0.8;
-  margin: 0;
+  margin-bottom: 64px;
 }
 
 .archiveIntro {
-  font-size: clamp(17px, 2vw, 22px);
-  font-weight: 300;
-  margin: 38px 0 0;
+  margin: 20px 0;
+  max-width: 650px;
+}
+
+.archiveLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+
+.archiveLinks a,
+.projectCard {
+  color: inherit;
+}
+
+.archiveLinks a:hover,
+.archiveLinks a:focus-visible,
+.projectCard:hover,
+.projectCard:focus-visible {
+  background: var(--ink);
+  color: var(--bg);
+  outline: none;
 }
 
 .projectList {
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--ink);
 }
 
 .projectCard {
-  align-items: baseline;
-  border-bottom: 1px solid var(--separator);
-  color: inherit;
+  align-items: start;
+  border-bottom: 1px solid var(--ink);
   display: grid;
-  gap: 18px;
-  grid-template-columns: 42px minmax(0, 1fr) auto 20px;
-  padding: 24px 0;
+  gap: 16px;
+  grid-template-columns: 32px minmax(0, 1fr) 160px 20px;
+  padding: 12px 0;
   text-decoration: none;
-  transition: padding 160ms ease;
-}
-
-.projectCard:hover,
-.projectCard:focus-visible {
-  padding-left: 12px;
 }
 
 .projectInfo {
   display: grid;
-  gap: 8px;
-}
-
-.projectTitle {
-  font-size: clamp(22px, 3vw, 34px);
-  font-weight: 400;
-  letter-spacing: -0.035em;
+  gap: 2px;
 }
 
 .projectDescription {
-  color: var(--secondary);
-  font-size: 14px;
-  font-weight: 300;
-}
-
-.projectArrow {
-  font-size: 22px;
+  max-width: 540px;
 }
 
 .archiveFooter {
-  margin-top: 100px;
+  margin-top: 64px;
+  padding-bottom: 24px;
 }
 
 @media (max-width: 620px) {
   .projectCard {
-    align-items: start;
-    grid-template-columns: 28px minmax(0, 1fr) 18px;
+    gap: 8px;
+    grid-template-columns: 28px minmax(0, 1fr) 16px;
   }
 
   .projectKind {
     display: none;
+  }
+
+  .archive {
+    padding: 16px;
   }
 }
 

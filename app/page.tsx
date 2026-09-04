@@ -49,9 +49,26 @@ export default function ArchiveHome() {
   return (
     <main className="archive">
       <header className="archiveHeader">
-        <p className="archiveEyebrow">SOFT CODING CLUB</p>
-        <h1>Archive</h1>
-        <p className="archiveIntro">작고 이상한 웹 작업들을 모아 둡니다.</p>
+        <p>NAMKYU YEO / ARCHIVE</p>
+        <p className="archiveIntro">
+          Community builder, designer, and creative technologist based in Daejeon &amp; Seoul.
+          I work with AI interfaces, installations, and experimental software.
+        </p>
+        <div aria-label="외부 링크" className="archiveLinks">
+          <a href="https://www.instagram.com/duskarb/" rel="noreferrer" target="_blank">
+            Instagram @duskarb ↗
+          </a>
+          <a href="https://www.yeonamkyu.com/" rel="noreferrer" target="_blank">
+            Website ↗
+          </a>
+          <a
+            href="https://www.linkedin.com/in/namkyu-yeo-388045285/"
+            rel="noreferrer"
+            target="_blank"
+          >
+            LinkedIn ↗
+          </a>
+        </div>
       </header>
 
       <nav aria-label="프로젝트 목록" className="projectList">
@@ -68,7 +85,7 @@ export default function ArchiveHome() {
         ))}
       </nav>
 
-      <footer className="archiveFooter">© Soft Coding Club</footer>
+      <footer className="archiveFooter">© Namkyu Yeo / Soft Coding Club</footer>
     </main>
   );
 }
