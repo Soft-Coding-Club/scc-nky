@@ -63,6 +63,7 @@ export default function ArchiveHome() {
           Community builder, designer, and creative technologist based in Daejeon &amp; Seoul.
           I work with AI interfaces, installations, and experimental software.
         </p>
+        <img alt="Namkyu Yeo" className="archiveImage" src="/namkyu-yeo.png" />
         <div aria-label="외부 링크" className="archiveLinks">
           <a href="https://www.instagram.com/duskarb/" rel="noreferrer" target="_blank">
             Instagram @duskarb ↗

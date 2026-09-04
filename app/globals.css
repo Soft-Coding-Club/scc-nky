@@ -63,6 +63,13 @@ textarea {
   max-width: 650px;
 }
 
+.archiveImage {
+  display: block;
+  height: auto;
+  margin: 24px 0;
+  width: 155px;
+}
+
 .archiveLinks {
   display: flex;
   flex-wrap: wrap;
