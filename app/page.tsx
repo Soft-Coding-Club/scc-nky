@@ -12,36 +12,29 @@ const projects = [
     kind: "Static site",
   },
   {
-    href: "/question-distorter",
-    number: "02",
-    title: "Question Distorter",
-    description: "하나의 질문 속 의도를 여러 갈래의 질문으로 왜곡합니다.",
-    kind: "Gemini-powered",
-  },
-  {
     href: "/nicetomeetyou/",
-    number: "03",
+    number: "02",
     title: "만반잘부",
     description: "카메라와 함께 시작하는 짧은 인사말의 경험.",
     kind: "Camera experience",
   },
   {
     href: "/give-me-love/",
-    number: "04",
+    number: "03",
     title: "give me love",
     description: "키보드 위에 하트 모양을 그려 사랑을 전합니다.",
     kind: "Keyboard experience",
   },
   {
     href: "/rgb-popups/",
-    number: "05",
+    number: "04",
     title: "RGB Popups",
-    description: "겹쳐지는 세 개의 팝업 창으로 색을 섞습니다.",
+    description: "화면을 클릭해 팝업 세 창을 열고, 창을 겹쳐 색을 섞어 보세요.",
     kind: "Popup experience",
   },
   {
     href: "/scc-motion/",
-    number: "06",
+    number: "05",
     title: "SCC Motion",
     description: "움직이는 SCC 타이포그래피를 만들고 내보냅니다.",
     kind: "Motion tool",
@@ -63,15 +56,7 @@ export default function ArchiveHome() {
           Community builder, designer, and creative technologist based in Daejeon &amp; Seoul.
           I work with AI interfaces, installations, and experimental software.
         </p>
-        <video
-          aria-label="Soft Coding Club logo animation"
-          autoPlay
-          className="archiveLogo"
-          loop
-          muted
-          playsInline
-          src="/scc-color.mp4"
-        />
+        <img alt="Soft Coding Club logo" className="archiveLogo" src="/namkyu-yeo.png" />
         <div aria-label="외부 링크" className="archiveLinks">
           <a href="https://www.instagram.com/duskarb/" rel="noreferrer" target="_blank">
             Instagram @duskarb ↗
@@ -91,6 +76,13 @@ export default function ArchiveHome() {
           </a>
           <a href="https://www.instagram.com/softcodingclub/" rel="noreferrer" target="_blank">
             SCC Instagram ↗
+          </a>
+          <a
+            href="https://philosophical-artistic-perspectives-chat.ai.studio"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Philosophical &amp; Artistic Perspectives Chat ↗
           </a>
         </div>
       </header>
