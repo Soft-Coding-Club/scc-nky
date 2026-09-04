@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#000000">
+    <title>잘못한 점 찾기</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      <button id="sceneButton" class="scene-button" type="button" aria-label="화면을 클릭해 사과문 PDF를 출력합니다">
+        <img
+          id="scene"
+          src="assets/scene-01-convenience.png"
+          alt="편의점 테이블에서 야식 도전을 하는 예능 장면"
+        >
+      </button>
+
+      <section id="printArea" class="print-area" aria-hidden="true">
+        <div class="doc-header">
+          <p id="docTime" class="doc-time">--:-- 자동 생성</p>
+          <p id="docScene" class="doc-scene"></p>
+        </div>
+        <h1>사과문</h1>
+        <h2 id="issueTitle"></h2>
+        <div id="apologyText" class="apology-text"></div>
+        <section class="commitment-box">
+          <h3>재발 방지 약속</h3>
+          <ul>
+            <li id="actionNow"></li>
+            <li id="actionFuture"></li>
+            <li>동일 장면 재검토 결과를 기록하고, 지적된 항목의 개선 여부를 다시 확인하겠습니다.</li>
+          </ul>
+        </section>
+        <p class="command">고개 숙여 사과드립니다.</p>
+        <p class="signature">출연자 및 제작진 일동</p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

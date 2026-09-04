@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>SCC Motion</title>
+
+    <!-- V2 디스플레이 폰트 33종. text=SC 로 필요한 두 글자만 받는다. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Alfa+Slab+One&family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Bodoni+Moda:opsz,wght@6..96,900&family=Bowlby+One+SC&family=Bungee&family=Cinzel:wght@900&family=Cormorant+Garamond:wght@700&family=DM+Serif+Display&family=Faster+One&family=Fraunces:opsz,wght@9..144,900&family=Instrument+Serif&family=Lobster&family=Major+Mono+Display&family=Monoton&family=Orbitron:wght@900&family=Oswald:wght@700&family=Pacifico&family=Playfair+Display:wght@600;900&family=Prata&family=Press+Start+2P&family=Righteous&family=Rubik+Mono+One&family=Silkscreen:wght@700&family=Space+Grotesk:wght@700&family=Space+Mono:wght@700&family=Staatliches&family=Syne:wght@800&family=Titan+One&family=Unbounded:wght@900&family=Yeseva+One&display=swap&text=SC"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+
+        width: 100%;
+        min-height: 100%;
+
+        background: #ffffff;
+        color: #000000;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        padding: 24px;
+
+        font-family: system-ui, sans-serif;
+      }
+
+      .app {
+        width: min(90vw, 820px);
+      }
+
+      .canvas-wrap {
+        width: 100%;
+
+        /* 그림자가 잘리지 않게 여백 확보 */
+        padding: 4px 4px 22px;
+      }
+
+      canvas {
+        display: block;
+
+        width: 100%;
+        height: auto;
+
+        cursor: pointer;
+
+        /* 프레임 대신 그림자 — 캔버스 밖이라 내보내기에는 포함되지 않는다 */
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.06),
+          0 6px 14px rgba(0, 0, 0, 0.09),
+          0 18px 40px rgba(0, 0, 0, 0.12);
+      }
+
+      /* 버튼과 입력은 브라우저 기본 렌더링을 그대로 쓴다.
+         여기서는 배치와 선택 상태 표시만 담당. */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+
+        gap: 12px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 4px;
+      }
+
+      .export-group {
+        display: flex;
+        gap: 4px;
+      }
+
+      button.active {
+        /* semibold 는 CSS 키워드가 아니라 무시된다. 숫자로 써야 먹는다. */
+        font-weight: 600;
+      }
+
+      .duration {
+        display: flex;
+        align-items: center;
+
+        gap: 6px;
+
+        margin-left: auto;
+
+        font-size: 13px;
+      }
+
+      #status {
+        width: 100%;
+
+        min-height: 17px;
+        margin-top: 8px;
+
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+
+        opacity: 0.65;
+      }
+
+      @media (max-width: 650px) {
+        body {
+          padding: 10px;
+        }
+
+        .duration {
+          margin-left: 0;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-BhE70rai.js"></script>
+  </head>
+
+  <body>
+    <main class="app">
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1024" height="1024"></canvas>
+      </div>
+
+      <div class="toolbar">
+        <div class="button-group">
+          <button class="mode active" data-mode="1">V1 Rotate</button>
+
+          <button class="mode" data-mode="2">V2 Font</button>
+
+          <button class="mode" data-mode="3">V3 Color</button>
+        </div>
+
+        <button class="control-button" id="playpause">Pause</button>
+
+        <div class="export-group">
+          <button class="export-button" id="png">PNG</button>
+
+          <button class="export-button" id="gif">GIF</button>
+
+          <button class="export-button" id="mov">MOV</button>
+        </div>
+
+        <label class="duration">
+          Duration
+
+          <input
+            id="duration"
+            type="number"
+            min="1"
+            max="20"
+            step="0.5"
+            value="6"
+          />
+
+          sec
+        </label>
+
+        <div id="status">Loading…</div>
+      </div>
+    </main>
+
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RGB Popups</title>
+    <style>
+      * { box-sizing: border-box; }
+
+      html, body, button {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body { background: #fff; }
+
+      button {
+        display: block;
+        height: 100vh;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="launch" aria-label="RGB 팝업 열기"></button>
+    <script>
+      const popupConfigs = [
+        { name: 'rgb-red', color: '#ff0000', rgb: [255, 0, 0], left: 130, top: 130 },
+        { name: 'rgb-green', color: '#00ff00', rgb: [0, 255, 0], left: 390, top: 220 },
+        { name: 'rgb-blue', color: '#0000ff', rgb: [0, 0, 255], left: 650, top: 310 },
+      ];
+      const livePopups = new Map();
+
+      const popupMarkup = (color, name) => `<!doctype html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <title></title>
+            <style>
+              html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: ${color}; }
+            </style>
+          </head>
+          <body><canvas id="composition"></canvas>
+            <script>
+              const canvas = document.querySelector('#composition');
+              const context = canvas.getContext('2d');
+              const baseColor = '${color}';
+              window.renderComposition = (layers) => {
+                const scale = window.devicePixelRatio || 1;
+                const width = Math.round(window.innerWidth * scale);
+                const height = Math.round(window.innerHeight * scale);
+                if (canvas.width !== width || canvas.height !== height) {
+                  canvas.width = width;
+                  canvas.height = height;
+                  canvas.style.width = window.innerWidth + 'px';
+                  canvas.style.height = window.innerHeight + 'px';
+                }
+                context.setTransform(scale, 0, 0, scale, 0, 0);
+                context.fillStyle = baseColor;
+                context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+                layers.forEach(({ x, y, width, height, color }) => {
+                  context.fillStyle = color;
+                  context.fillRect(x, y, width, height);
+                });
+              };
+              const reportBounds = () => {
+                const sideFrame = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
+                const topFrame = Math.max(0, window.outerHeight - window.innerHeight - sideFrame);
+                window.opener?.postMessage({
+                  type: 'popup-bounds',
+                  name: '${name}',
+                  bounds: {
+                    left: window.screenX + sideFrame,
+                    top: window.screenY + topFrame,
+                    right: window.screenX + window.outerWidth - sideFrame,
+                    bottom: window.screenY + window.outerHeight - sideFrame,
+                  },
+                }, '*');
+                requestAnimationFrame(reportBounds);
+              };
+              window.addEventListener('message', ({ data }) => {
+                if (data?.type === 'popup-composition' && data.name === '${name}') {
+                  window.renderComposition(data.layers);
+                }
+              });
+              window.addEventListener('resize', reportBounds);
+              window.addEventListener('focus', reportBounds);
+              reportBounds();
+            <\/script>
+          </body>
+        </html>`;
+
+      const contentBounds = (popup) => {
+        const sideFrame = Math.max(0, (popup.outerWidth - popup.innerWidth) / 2);
+        const topFrame = Math.max(0, popup.outerHeight - popup.innerHeight - sideFrame);
+        return {
+          left: popup.screenX + sideFrame,
+          top: popup.screenY + topFrame,
+          right: popup.screenX + popup.outerWidth - sideFrame,
+          bottom: popup.screenY + popup.outerHeight - sideFrame,
+        };
+      };
+
+      const sharedBounds = (windows) => ({
+        left: Math.max(...windows.map(({ bounds }) => bounds.left)),
+        top: Math.max(...windows.map(({ bounds }) => bounds.top)),
+        right: Math.min(...windows.map(({ bounds }) => bounds.right)),
+        bottom: Math.min(...windows.map(({ bounds }) => bounds.bottom)),
+      });
+
+      const mixedColor = (windows) => `rgb(${windows.reduce((sum, { rgb }) => sum + rgb[0], 0)}, ${windows.reduce((sum, { rgb }) => sum + rgb[1], 0)}, ${windows.reduce((sum, { rgb }) => sum + rgb[2], 0)})`;
+
+      const syncComposition = () => {
+        const windows = [...livePopups.values()]
+          .filter(({ popup, bounds }) => !popup.closed && bounds)
+          .map((entry) => ({ ...entry }));
+
+        windows.forEach((target) => {
+          const layers = [];
+          for (let mask = 1; mask < (1 << windows.length); mask += 1) {
+            const group = windows.filter((_, index) => mask & (1 << index));
+            if (group.length < 2 || !group.includes(target)) continue;
+            const overlap = sharedBounds(group);
+            if (overlap.right <= overlap.left || overlap.bottom <= overlap.top) continue;
+            layers.push({
+              x: overlap.left - target.bounds.left,
+              y: overlap.top - target.bounds.top,
+              width: overlap.right - overlap.left,
+              height: overlap.bottom - overlap.top,
+              color: mixedColor(group),
+              depth: group.length,
+            });
+          }
+          layers.sort((a, b) => a.depth - b.depth);
+          target.popup.postMessage({
+            type: 'popup-composition',
+            name: target.name,
+            layers,
+          }, '*');
+        });
+      };
+
+      window.addEventListener('message', ({ data }) => {
+        if (data?.type !== 'popup-bounds' || !livePopups.has(data.name)) return;
+        livePopups.get(data.name).bounds = data.bounds;
+        syncComposition();
+      });
+
+      const launchPopups = () => {
+        popupConfigs.forEach(({ name, color, rgb, left, top }) => {
+          const features = `popup=yes,width=430,height=360,left=${left},top=${top},resizable=yes`;
+          const popup = window.open('', name, features);
+          if (!popup) return;
+
+          popup.document.open();
+          popup.document.write(popupMarkup(color, name));
+          popup.document.close();
+          livePopups.set(name, { popup, color, rgb, name, bounds: contentBounds(popup) });
+          syncComposition();
+          popup.focus();
+        });
+      };
+
+      window.addEventListener('load', launchPopups, { once: true });
+      document.querySelector('#launch').addEventListener('click', launchPopups);
+    </script>
+  </body>
+</html>
