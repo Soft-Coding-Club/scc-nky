@@ -29,7 +29,7 @@ const projects = [
     href: "/rgb-popups/",
     number: "04",
     title: "RGB Popups",
-    description: "화면을 클릭해 팝업 세 창을 열고, 창을 겹쳐 색을 섞어 보세요.",
+    description: "전체화면이 아닌 작은 팝업 창 세 개로 열립니다. 창을 겹쳐 색을 섞어 보세요.",
     kind: "Popup experience",
   },
   {
