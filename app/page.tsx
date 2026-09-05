@@ -69,7 +69,7 @@ export default function ArchiveHome() {
             @duskarb ↗
           </a>
           <a href="https://www.yeonamkyu.com/" rel="noreferrer" target="_blank">
-            Website ↗
+            yeonamkyu ↗
           </a>
           <a
             href="https://www.linkedin.com/in/namkyu-yeo-388045285/"
@@ -79,7 +79,7 @@ export default function ArchiveHome() {
             LinkedIn ↗
           </a>
           <a href="https://softcodingclub.vercel.app/" rel="noreferrer" target="_blank">
-            Website ↗
+            SCC ↗
           </a>
           <a href="https://www.instagram.com/softcodingclub/" rel="noreferrer" target="_blank">
             @softcodingclub ↗
