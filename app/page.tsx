@@ -66,23 +66,23 @@ export default function ArchiveHome() {
         <img alt="Soft Coding Club logo" className="archiveLogo" src="/namkyu-yeo.png" />
         <div aria-label="외부 링크" className="archiveLinks">
           <a href="https://www.instagram.com/duskarb/" rel="noreferrer" target="_blank">
-            Instagram @duskarb ↗
+            Instagram — @duskarb ↗
           </a>
           <a href="https://www.yeonamkyu.com/" rel="noreferrer" target="_blank">
-            Website ↗
+            Website — yeonamkyu.com ↗
           </a>
           <a
             href="https://www.linkedin.com/in/namkyu-yeo-388045285/"
             rel="noreferrer"
             target="_blank"
           >
-            LinkedIn ↗
+            LinkedIn — Namkyu Yeo ↗
           </a>
           <a href="https://softcodingclub.vercel.app/" rel="noreferrer" target="_blank">
-            Soft Coding Club ↗
+            Website — Soft Coding Club ↗
           </a>
           <a href="https://www.instagram.com/softcodingclub/" rel="noreferrer" target="_blank">
-            SCC Instagram ↗
+            Instagram — @softcodingclub ↗
           </a>
         </div>
       </header>
