@@ -97,7 +97,7 @@
 
       const launchPopups = () => {
         popupConfigs.forEach(({ path, name, color, rgb, left, top }) => {
-          const features = `popup=yes,width=430,height=360,left=${left},top=${top},resizable=yes`;
+          const features = `popup=yes,width=430,height=360,left=${left},top=${top},resizable=yes,location=no,toolbar=no,menubar=no,status=no,scrollbars=no`;
           const popup = window.open(`/rgb-popups/${path}`, name, features);
           if (!popup) return;
 
