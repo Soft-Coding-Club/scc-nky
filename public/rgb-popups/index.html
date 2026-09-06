@@ -32,70 +32,12 @@
     <button id="launch" aria-label="RGB 팝업 열기"></button>
     <script>
       const popupConfigs = [
-        { name: 'rgb-red', color: '#ff0000', rgb: [255, 0, 0], left: 130, top: 130 },
-        { name: 'rgb-green', color: '#00ff00', rgb: [0, 255, 0], left: 390, top: 220 },
-        { name: 'rgb-blue', color: '#0000ff', rgb: [0, 0, 255], left: 650, top: 310 },
+        { path: 'r', name: 'rgb-red', color: '#ff0000', rgb: [255, 0, 0], left: 130, top: 130 },
+        { path: 'g', name: 'rgb-green', color: '#00ff00', rgb: [0, 255, 0], left: 390, top: 220 },
+        { path: 'b', name: 'rgb-blue', color: '#0000ff', rgb: [0, 0, 255], left: 650, top: 310 },
       ];
       const livePopups = new Map();
 
-      const popupMarkup = (color, name) => `<!doctype html>
-        <html>
-          <head>
-            <meta charset="UTF-8" />
-            <title></title>
-            <style>
-              html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: ${color}; }
-            </style>
-          </head>
-          <body><canvas id="composition"></canvas>
-            <script>
-              const canvas = document.querySelector('#composition');
-              const context = canvas.getContext('2d');
-              const baseColor = '${color}';
-              window.renderComposition = (layers) => {
-                const scale = window.devicePixelRatio || 1;
-                const width = Math.round(window.innerWidth * scale);
-                const height = Math.round(window.innerHeight * scale);
-                if (canvas.width !== width || canvas.height !== height) {
-                  canvas.width = width;
-                  canvas.height = height;
-                  canvas.style.width = window.innerWidth + 'px';
-                  canvas.style.height = window.innerHeight + 'px';
-                }
-                context.setTransform(scale, 0, 0, scale, 0, 0);
-                context.fillStyle = baseColor;
-                context.fillRect(0, 0, window.innerWidth, window.innerHeight);
-                layers.forEach(({ x, y, width, height, color }) => {
-                  context.fillStyle = color;
-                  context.fillRect(x, y, width, height);
-                });
-              };
-              const reportBounds = () => {
-                const sideFrame = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
-                const topFrame = Math.max(0, window.outerHeight - window.innerHeight - sideFrame);
-                window.opener?.postMessage({
-                  type: 'popup-bounds',
-                  name: '${name}',
-                  bounds: {
-                    left: window.screenX + sideFrame,
-                    top: window.screenY + topFrame,
-                    right: window.screenX + window.outerWidth - sideFrame,
-                    bottom: window.screenY + window.outerHeight - sideFrame,
-                  },
-                }, '*');
-                requestAnimationFrame(reportBounds);
-              };
-              window.addEventListener('message', ({ data }) => {
-                if (data?.type === 'popup-composition' && data.name === '${name}') {
-                  window.renderComposition(data.layers);
-                }
-              });
-              window.addEventListener('resize', reportBounds);
-              window.addEventListener('focus', reportBounds);
-              reportBounds();
-            <\/script>
-          </body>
-        </html>`;
 
       const contentBounds = (popup) => {
         const sideFrame = Math.max(0, (popup.outerWidth - popup.innerWidth) / 2);
@@ -154,14 +96,11 @@
       });
 
       const launchPopups = () => {
-        popupConfigs.forEach(({ name, color, rgb, left, top }) => {
+        popupConfigs.forEach(({ path, name, color, rgb, left, top }) => {
           const features = `popup=yes,width=430,height=360,left=${left},top=${top},resizable=yes`;
-          const popup = window.open('', name, features);
+          const popup = window.open(`/rgb-popups/${path}`, name, features);
           if (!popup) return;
 
-          popup.document.open();
-          popup.document.write(popupMarkup(color, name));
-          popup.document.close();
           livePopups.set(name, { popup, color, rgb, name, bounds: contentBounds(popup) });
           syncComposition();
           popup.focus();
