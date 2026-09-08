@@ -34,6 +34,17 @@
       will-change: transform;
     }
 
+    .heart.is-breaking {
+      animation: heart-break 480ms steps(2, end) forwards;
+    }
+
+    @keyframes heart-break {
+      0%, 35% { opacity: 1; filter: grayscale(0); }
+      36%, 65% { opacity: 0; filter: grayscale(1); }
+      66% { opacity: 1; filter: grayscale(1); }
+      100% { opacity: 0; filter: grayscale(1); }
+    }
+
     main { position: relative; z-index: 1; text-align: center; }
     h1 { margin: 0 0 18px; font: inherit; font-size: 1rem; font-weight: 400; }
 
@@ -125,19 +136,41 @@
       input.value = '';
     }
 
-    function hasHeart() {
-      if (pressedKeys.length < 6) return false;
+    function getHeartMatch() {
+      if (pressedKeys.length < 6) return { isHeart: false, accuracy: 0 };
       const coordinates = pressedKeys.map(key => keyMap[key]).filter(Boolean);
-      if (!coordinates.length) return false;
+      if (!coordinates.length) return { isHeart: false, accuracy: 0 };
 
       const minRow = Math.min(...coordinates.map(point => point.row));
       const minCol = Math.min(...coordinates.map(point => point.col));
       const shape = new Set(coordinates.map(point => `${point.row - minRow},${point.col - minCol}`));
+      let accuracy = 0;
+      let isHeart = false;
 
-      return heartShapes.some(heart => {
+      heartShapes.forEach(heart => {
         let matches = 0;
         shape.forEach(point => { if (heart.has(point)) matches++; });
-        return matches >= heart.size * .8 && shape.size >= heart.size * .8;
+        const score = matches / heart.size;
+        accuracy = Math.max(accuracy, score);
+        if (score >= .8 && shape.size >= heart.size * .8) isHeart = true;
+      });
+
+      return { isHeart, accuracy };
+    }
+
+    function breakHearts() {
+      const heartsToBreak = hearts
+        .filter(heart => !heart.element.classList.contains('is-breaking'))
+        .sort(() => Math.random() - .5)
+        .slice(0, Math.min(5, Math.max(2, Math.ceil(hearts.length / 3))));
+
+      heartsToBreak.forEach(heart => {
+        heart.element.classList.add('is-breaking');
+        setTimeout(() => {
+          heart.element.remove();
+          const index = hearts.indexOf(heart);
+          if (index !== -1) hearts.splice(index, 1);
+        }, 480);
       });
     }
 
@@ -145,7 +178,8 @@
       if (event.target !== input) return;
       if (event.code === 'Enter') {
         event.preventDefault();
-        if (hasHeart()) {
+        const heartMatch = getHeartMatch();
+        if (heartMatch.isHeart) {
           alert('love received ♥');
         } else {
           const noLoveMessages = [
@@ -154,7 +188,11 @@
             'that is not a heart',
             'try again. make it mean something.'
           ];
-          alert(noLoveMessages[Math.floor(Math.random() * noLoveMessages.length)]);
+          const message = heartMatch.accuracy >= .5
+            ? 'I dont accept Broken hearts'
+            : noLoveMessages[Math.floor(Math.random() * noLoveMessages.length)];
+          alert(message);
+          breakHearts();
         }
         reset();
         return;
