@@ -378,7 +378,7 @@
       const $ = selector => document.querySelector(selector);
       const clockOrb = $('#clock-orb');
       const hexEl = $('#hex');
-      const faviconNode = document.querySelector("link[rel*='icon']");
+      let faviconNode = document.querySelector("link[rel*='icon']");
       const statusEl = $('#status');
       const resumeButton = $('#resume');
       const ranges = [$('#hour-range'), $('#minute-range'), $('#second-range')];
@@ -456,7 +456,10 @@
       function updateFavicon(hex) {
         if (!faviconNode || faviconColor === hex) return;
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="${hex}"/></svg>`;
-        faviconNode.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        const nextFavicon = faviconNode.cloneNode();
+        nextFavicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        faviconNode.replaceWith(nextFavicon);
+        faviconNode = nextFavicon;
         faviconColor = hex;
       }
 
@@ -490,7 +493,6 @@
         const color = colorFromTime(hour, minute, second);
         clockOrb.style.setProperty('--orb', color.css);
         clockOrb.setAttribute('aria-label', `${pad(hour)}시 ${pad(minute)}분 ${pad(second)}초의 색, ${color.hex}`);
-        updateFavicon(color.hex);
         hexEl.value = color.hex.toUpperCase();
         hexEl.textContent = color.hex.toUpperCase();
 
@@ -509,6 +511,7 @@
 
       function tick() {
         const now = new Date();
+        updateFavicon(colorFromTime(...localParts(now)).hex);
         if (isLive) setMainClock(...localParts(now));
         if (worldDialog.open) {
           renderWorldTimes(now);
@@ -738,7 +741,7 @@
 
       globe.addEventListener('pointermove', event => {
         if (dragging) {
-          globeRotation = dragStartRotation + (event.clientX - dragStartX) / globe.clientWidth * Math.PI * 2;
+          globeRotation = dragStartRotation - (event.clientX - dragStartX) / globe.clientWidth * Math.PI * 2;
           renderGlobe();
         }
         updateGlobeReadout(event);
@@ -754,8 +757,17 @@
         if (!dragging) updateGlobeReadout(event);
       });
 
-      tick();
-      setInterval(tick, 1000);
+      function scheduleTick() {
+        tick();
+        const delay = 1000 - Date.now() % 1000 + 16;
+        setTimeout(scheduleTick, delay);
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) tick();
+      });
+
+      scheduleTick();
 
       window.sifuncho = Object.freeze({
         showWorldTimes: openWorld,
