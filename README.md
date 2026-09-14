@@ -17,6 +17,9 @@ Soft Coding Club의 인터랙티브 작업을 한 주소에서 탐색하는 아�
 
 정적 작품의 CSS·JavaScript·이미지는 각각의 작품 경로로 절대 참조합니다. `next.config.mjs`는 깨끗한 작품 URL을 해당 작품의 `index.html`로 rewrite합니다.
 
+`시분초`의 위치별 시간대 매핑은 CC0-1.0 라이선스의
+[@photostructure/tz-lookup](https://github.com/photostructure/tz-lookup)을 사용합니다.
+
 ## Vercel deployment
 
 1. Import `Soft-Coding-Club/scc-nky` into Vercel. The repository root is the project root; no custom build command is needed.

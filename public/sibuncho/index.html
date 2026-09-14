@@ -189,6 +189,8 @@
     .globe-wrap {
       display: grid;
       place-items: center;
+      align-content: center;
+      gap: 14px;
       min-height: min(58vw, 550px);
     }
 
@@ -203,6 +205,15 @@
     }
 
     #color-globe:active { cursor: grabbing; }
+
+    .globe-readout {
+      min-height: 1.4em;
+      color: #8d8d8d;
+      font-size: .75rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .03em;
+      text-align: center;
+    }
 
     .world-grid {
       display: grid;
@@ -344,7 +355,8 @@
       </header>
 
       <div class="globe-wrap">
-        <canvas id="color-globe" width="420" height="420" role="img" aria-label="경도별 현재 시간을 색으로 표현한 지구본"></canvas>
+        <canvas id="color-globe" width="420" height="420" role="img" aria-label="실제 위치별 현재 시간을 색으로 표현한 지구본"></canvas>
+        <output class="globe-readout" id="globe-readout" aria-live="polite">지구본을 드래그하거나 지역을 가리켜 보세요</output>
       </div>
 
       <div>
@@ -360,6 +372,7 @@
     </div>
   </dialog>
 
+  <script src="/sibuncho/vendor/tz-lookup.js"></script>
   <script>
     (() => {
       const $ = selector => document.querySelector(selector);
@@ -375,6 +388,7 @@
       const zoneSelect = $('#zone-select');
       const globe = $('#color-globe');
       const globeContext = globe.getContext('2d', { alpha: true });
+      const globeReadout = $('#globe-readout');
       const storageKey = 'sifuncho-world-zones';
       let isLive = true;
       let globeRotation = 0;
@@ -382,20 +396,44 @@
       let dragStartX = 0;
       let dragStartRotation = 0;
       let faviconColor = '';
+      let globeColorSecond = -1;
+      const globeZoneColors = new Map();
+      const timeFormatters = new Map();
 
       const zoneOptions = [
-        ['Asia/Seoul', '서울'], ['Asia/Tokyo', '도쿄'], ['Asia/Shanghai', '상하이'],
-        ['Asia/Hong_Kong', '홍콩'], ['Asia/Singapore', '싱가포르'], ['Asia/Bangkok', '방콕'],
-        ['Asia/Kolkata', '뉴델리'], ['Asia/Dubai', '두바이'], ['Europe/Istanbul', '이스탄불'],
-        ['Europe/Athens', '아테네'], ['Europe/Paris', '파리'], ['Europe/London', '런던'],
-        ['Africa/Cairo', '카이로'], ['Africa/Johannesburg', '요하네스버그'],
-        ['America/New_York', '뉴욕'], ['America/Toronto', '토론토'], ['America/Chicago', '시카고'],
-        ['America/Denver', '덴버'], ['America/Los_Angeles', '로스앤젤레스'],
-        ['America/Vancouver', '밴쿠버'], ['America/Sao_Paulo', '상파울루'],
-        ['Pacific/Honolulu', '호놀룰루'], ['Pacific/Auckland', '오클랜드'],
-        ['Australia/Sydney', '시드니'], ['Australia/Perth', '퍼스'], ['UTC', '협정 세계시']
+        ['Asia/Seoul', '서울', 37.5665, 126.9780],
+        ['Asia/Tokyo', '도쿄', 35.6762, 139.6503],
+        ['Asia/Shanghai', '상하이', 31.2304, 121.4737],
+        ['Asia/Hong_Kong', '홍콩', 22.3193, 114.1694],
+        ['Asia/Singapore', '싱가포르', 1.3521, 103.8198],
+        ['Asia/Bangkok', '방콕', 13.7563, 100.5018],
+        ['Asia/Kolkata', '뉴델리', 28.6139, 77.2090],
+        ['Asia/Dubai', '두바이', 25.2048, 55.2708],
+        ['Europe/Istanbul', '이스탄불', 41.0082, 28.9784],
+        ['Europe/Athens', '아테네', 37.9838, 23.7275],
+        ['Europe/Paris', '파리', 48.8566, 2.3522],
+        ['Europe/London', '런던', 51.5074, -0.1278],
+        ['Africa/Cairo', '카이로', 30.0444, 31.2357],
+        ['Africa/Johannesburg', '요하네스버그', -26.2041, 28.0473],
+        ['America/New_York', '뉴욕', 40.7128, -74.0060],
+        ['America/Toronto', '토론토', 43.6532, -79.3832],
+        ['America/Chicago', '시카고', 41.8781, -87.6298],
+        ['America/Denver', '덴버', 39.7392, -104.9903],
+        ['America/Los_Angeles', '로스앤젤레스', 34.0522, -118.2437],
+        ['America/Vancouver', '밴쿠버', 49.2827, -123.1207],
+        ['America/Sao_Paulo', '상파울루', -23.5505, -46.6333],
+        ['Pacific/Honolulu', '호놀룰루', 21.3099, -157.8581],
+        ['Pacific/Auckland', '오클랜드', -36.8509, 174.7645],
+        ['Australia/Sydney', '시드니', -33.8688, 151.2093],
+        ['Australia/Perth', '퍼스', -31.9523, 115.8613],
+        ['UTC', '협정 세계시', null, null]
       ];
       const zoneLabels = Object.fromEntries(zoneOptions);
+      const zoneLocations = Object.fromEntries(
+        zoneOptions
+          .filter(([, , latitude, longitude]) => latitude !== null && longitude !== null)
+          .map(([timeZone, label, latitude, longitude]) => [timeZone, { label, latitude, longitude }])
+      );
       const defaultZones = ['Asia/Seoul', 'Asia/Tokyo', 'Europe/London', 'America/New_York'];
       let selectedZones;
 
@@ -432,13 +470,18 @@
       }
 
       function zonedParts(date, timeZone) {
-        const parts = new Intl.DateTimeFormat('en-GB', {
-          timeZone,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hourCycle: 'h23'
-        }).formatToParts(date);
+        let formatter = timeFormatters.get(timeZone);
+        if (!formatter) {
+          formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23'
+          });
+          timeFormatters.set(timeZone, formatter);
+        }
+        const parts = formatter.formatToParts(date);
         const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
         return [Number(values.hour), Number(values.minute), Number(values.second)];
       }
@@ -500,16 +543,83 @@
         });
       }
 
+      function normalizeLongitude(longitude) {
+        return ((longitude + 180) % 360 + 360) % 360 - 180;
+      }
+
+      function timeZoneAt(latitude, longitude) {
+        if (typeof tzlookup !== 'function') return 'Etc/UTC';
+        return tzlookup(
+          Math.max(-89.9999, Math.min(89.9999, latitude)),
+          normalizeLongitude(longitude)
+        );
+      }
+
+      function globeColorForZone(now, timeZone) {
+        const second = Math.floor(now.getTime() / 1000);
+        if (globeColorSecond !== second) {
+          globeColorSecond = second;
+          globeZoneColors.clear();
+        }
+        if (!globeZoneColors.has(timeZone)) {
+          let parts;
+          try {
+            parts = zonedParts(now, timeZone);
+          } catch {
+            parts = zonedParts(now, 'Etc/UTC');
+          }
+          globeZoneColors.set(timeZone, colorFromTime(...parts));
+        }
+        return globeZoneColors.get(timeZone);
+      }
+
+      function projectLocation(latitude, longitude, radius, center) {
+        const latitudeRadians = latitude * Math.PI / 180;
+        const relativeLongitude = longitude * Math.PI / 180 - globeRotation;
+        const latitudeScale = Math.cos(latitudeRadians);
+        const depth = latitudeScale * Math.cos(relativeLongitude);
+        if (depth <= 0) return null;
+        return {
+          x: center + radius * latitudeScale * Math.sin(relativeLongitude),
+          y: center - radius * Math.sin(latitudeRadians),
+          depth
+        };
+      }
+
+      function drawSelectedZoneMarkers(now, radius, center) {
+        globeContext.save();
+        selectedZones.forEach(timeZone => {
+          const location = zoneLocations[timeZone];
+          if (!location) return;
+          const point = projectLocation(location.latitude, location.longitude, radius, center);
+          if (!point) return;
+          const markerRadius = 3.5 + point.depth * 2;
+          const color = globeColorForZone(now, timeZone);
+          globeContext.beginPath();
+          globeContext.arc(point.x, point.y, markerRadius + 2, 0, Math.PI * 2);
+          globeContext.fillStyle = 'rgba(0, 0, 0, .8)';
+          globeContext.fill();
+          globeContext.beginPath();
+          globeContext.arc(point.x, point.y, markerRadius, 0, Math.PI * 2);
+          globeContext.fillStyle = color.css;
+          globeContext.fill();
+          globeContext.strokeStyle = 'rgba(255, 255, 255, .9)';
+          globeContext.lineWidth = 1.25;
+          globeContext.stroke();
+        });
+        globeContext.restore();
+      }
+
       function renderGlobe(now = new Date()) {
         const size = globe.width;
         const radius = size / 2 - 3;
         const center = size / 2;
         const image = globeContext.createImageData(size, size);
-        const utc = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
-        const seconds = now.getUTCSeconds();
+        let previousZoneRow = new Array(size).fill(null);
 
         for (let y = 0; y < size; y += 1) {
           const ny = (y - center) / radius;
+          const currentZoneRow = new Array(size).fill(null);
           for (let x = 0; x < size; x += 1) {
             const nx = (x - center) / radius;
             const distance = nx * nx + ny * ny;
@@ -517,24 +627,64 @@
             if (distance > 1) continue;
 
             const nz = Math.sqrt(1 - distance);
-            const longitude = Math.atan2(nx, nz) + globeRotation;
-            const localDecimal = (utc + longitude * 12 / Math.PI + 48) % 24;
-            const hour = Math.floor(localDecimal);
-            const minute = Math.floor((localDecimal - hour) * 60);
-            const [red, green, blue] = colorFromTime(hour, minute, seconds).rgb;
+            const latitude = Math.asin(-ny) * 180 / Math.PI;
+            const longitude = normalizeLongitude((Math.atan2(nx, nz) + globeRotation) * 180 / Math.PI);
+            const timeZone = timeZoneAt(latitude, longitude);
+            const [red, green, blue] = globeColorForZone(now, timeZone).rgb;
+            currentZoneRow[x] = timeZone;
+
+            const boundary =
+              (currentZoneRow[x - 1] && currentZoneRow[x - 1] !== timeZone) ||
+              (previousZoneRow[x] && previousZoneRow[x] !== timeZone);
             const edge = Math.pow(nz, .34);
-            const light = .43 + edge * .57;
-            const sheen = Math.max(0, 1 - Math.hypot(nx + .34, ny + .3) * 2.5) * 28;
+            const light = (.42 + edge * .58) * (boundary ? .55 : 1);
+            const sheen = Math.max(0, 1 - Math.hypot(nx + .34, ny + .3) * 2.5) * 24;
 
             image.data[index] = Math.min(255, red * light + sheen);
             image.data[index + 1] = Math.min(255, green * light + sheen);
             image.data[index + 2] = Math.min(255, blue * light + sheen);
-            image.data[index + 3] = Math.min(255, 170 + edge * 85);
+            image.data[index + 3] = Math.min(255, 176 + edge * 79);
           }
+          previousZoneRow = currentZoneRow;
         }
 
         globeContext.clearRect(0, 0, size, size);
         globeContext.putImageData(image, 0, 0);
+        drawSelectedZoneMarkers(now, radius, center);
+      }
+
+      function locationFromPointer(event) {
+        const bounds = globe.getBoundingClientRect();
+        const size = globe.width;
+        const radius = size / 2 - 3;
+        const center = size / 2;
+        const x = (event.clientX - bounds.left) / bounds.width * size;
+        const y = (event.clientY - bounds.top) / bounds.height * size;
+        const nx = (x - center) / radius;
+        const ny = (y - center) / radius;
+        const distance = nx * nx + ny * ny;
+        if (distance > 1) return null;
+        const nz = Math.sqrt(1 - distance);
+        return {
+          latitude: Math.asin(-ny) * 180 / Math.PI,
+          longitude: normalizeLongitude((Math.atan2(nx, nz) + globeRotation) * 180 / Math.PI)
+        };
+      }
+
+      function updateGlobeReadout(event) {
+        const location = locationFromPointer(event);
+        if (!location) {
+          globeReadout.value = '지구본을 드래그하거나 지역을 가리켜 보세요';
+          globeReadout.textContent = globeReadout.value;
+          return;
+        }
+        const timeZone = timeZoneAt(location.latitude, location.longitude);
+        const [hour, minute, second] = zonedParts(new Date(), timeZone);
+        const color = colorFromTime(hour, minute, second);
+        const latitudeLabel = `${Math.abs(location.latitude).toFixed(1)}°${location.latitude >= 0 ? 'N' : 'S'}`;
+        const longitudeLabel = `${Math.abs(location.longitude).toFixed(1)}°${location.longitude >= 0 ? 'E' : 'W'}`;
+        globeReadout.value = `${timeZone} · ${pad(hour)}:${pad(minute)}:${pad(second)} · ${color.hex.toUpperCase()} · ${latitudeLabel} ${longitudeLabel}`;
+        globeReadout.textContent = globeReadout.value;
       }
 
       function saveZones() {
@@ -587,9 +737,11 @@
       });
 
       globe.addEventListener('pointermove', event => {
-        if (!dragging) return;
-        globeRotation = dragStartRotation + (event.clientX - dragStartX) / globe.clientWidth * Math.PI * 2;
-        renderGlobe();
+        if (dragging) {
+          globeRotation = dragStartRotation + (event.clientX - dragStartX) / globe.clientWidth * Math.PI * 2;
+          renderGlobe();
+        }
+        updateGlobeReadout(event);
       });
 
       globe.addEventListener('pointerup', event => {
@@ -598,6 +750,9 @@
       });
 
       globe.addEventListener('pointercancel', () => { dragging = false; });
+      globe.addEventListener('pointerleave', event => {
+        if (!dragging) updateGlobeReadout(event);
+      });
 
       tick();
       setInterval(tick, 1000);
