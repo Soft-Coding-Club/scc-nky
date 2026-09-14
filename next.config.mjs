@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
-const staticProjects = ["sorry", "nicetomeetyou", "give-me-love", "rgb-popups", "scc-motion"];
+const staticProjects = [
+  "sorry",
+  "nicetomeetyou",
+  "give-me-love",
+  "rgb-popups",
+  "scc-motion",
+  "sibuncho",
+];
 
 const nextConfig = {
   async rewrites() {

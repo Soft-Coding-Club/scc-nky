@@ -13,6 +13,7 @@ Soft Coding Club의 인터랙티브 작업을 한 주소에서 탐색하는 아�
 | `/give-me-love` | give me love | 키보드 입력 기반 작업 |
 | `/rgb-popups` | RGB Popups | 작은 팝업 창 세 개를 겹쳐 색을 섞는 작업 |
 | `/scc-motion` | SCC Motion | 움직이는 SCC 타이포그래피 도구 |
+| `/sibuncho` | 시분초 | 시·분·초를 RGB 색으로 보여주는 실시간 세계시계 |
 
 정적 작품의 CSS·JavaScript·이미지는 각각의 작품 경로로 절대 참조합니다. `next.config.mjs`는 깨끗한 작품 URL을 해당 작품의 `index.html`로 rewrite합니다.
 

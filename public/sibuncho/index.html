@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="24시간의 시·분·초를 RGB 색으로 보여주는 실시간 세계 시계">
+  <title>시분초 · RGB 세계시계</title>
+  <link id="dynamic-favicon" rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23000000'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      --white: #f5f5f5;
+      --muted: #858585;
+      --line: #2b2b2b;
+      --orb: rgb(0 0 0);
+      --orb-ink: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      min-width: 320px;
+      min-height: 100%;
+      margin: 0;
+      background: #000;
+      color: var(--white);
+    }
+
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    button,
+    input,
+    select { font: inherit; }
+
+    button,
+    select { cursor: pointer; }
+
+    .clock-shell {
+      position: relative;
+      min-height: 100dvh;
+      padding: clamp(18px, 3vw, 36px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .brand {
+      color: #777;
+      font-size: .78rem;
+      letter-spacing: .16em;
+    }
+
+    .clock-face {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+      padding: 0 0 clamp(12px, 2vh, 30px);
+    }
+
+    .clock-orb {
+      width: min(52vw, 55vh, 560px);
+      min-width: 230px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--orb);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .09), 0 32px 100px rgba(0, 0, 0, .8);
+      transition: background-color .72s linear;
+    }
+
+    .controls {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: clamp(18px, 4vw, 60px);
+      z-index: 2;
+    }
+
+    .sliders {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(14px, 4vw, 64px);
+      width: min(980px, 100%);
+    }
+
+    .channel {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 7px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .channel output {
+      display: block;
+      font-size: clamp(.9rem, 1.5vw, 1.15rem);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .channel:nth-child(1) output { color: #ff5a52; }
+    .channel:nth-child(2) output { color: #4adf6b; }
+    .channel:nth-child(3) output { color: #4f9bff; }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 0;
+    }
+
+    #hour-range { accent-color: #ff3b30; }
+    #minute-range { accent-color: #34c759; }
+    #second-range { accent-color: #0a84ff; }
+
+    .color-code {
+      align-self: end;
+      min-width: 7ch;
+      padding-bottom: 2px;
+      color: #a0a0a0;
+      font-size: clamp(.86rem, 1.4vw, 1.05rem);
+      text-align: right;
+      text-transform: uppercase;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .resume {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 14px);
+    }
+
+    dialog {
+      width: 100vw;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: #000;
+      color: var(--white);
+    }
+
+    dialog::backdrop { background: #000; }
+
+    .world-shell {
+      min-height: 100dvh;
+      padding: clamp(18px, 3vw, 36px);
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: clamp(34px, 6vw, 76px);
+      overflow-y: auto;
+    }
+
+    .world-head {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .world-head > * { pointer-events: auto; }
+
+    .world-title {
+      margin: 0;
+      color: #777;
+      font-size: .78rem;
+      font-weight: 400;
+      letter-spacing: .16em;
+    }
+
+    .globe-wrap {
+      display: grid;
+      place-items: center;
+      min-height: min(58vw, 550px);
+    }
+
+    #color-globe {
+      display: block;
+      width: min(56vw, 54vh, 520px);
+      min-width: 250px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #color-globe:active { cursor: grabbing; }
+
+    .world-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      gap: clamp(30px, 5vw, 64px) clamp(18px, 4vw, 48px);
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .world-item {
+      position: relative;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .world-color {
+      width: 100%;
+      max-width: 190px;
+      aspect-ratio: 1;
+      margin: 0 auto;
+      border-radius: 50%;
+      background: #111;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+      transition: background-color .72s linear;
+    }
+
+    .world-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 34px;
+      margin-top: 10px;
+    }
+
+    .world-meta strong {
+      overflow: hidden;
+      color: #d6d6d6;
+      font-family: system-ui, sans-serif;
+      font-size: .92rem;
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .remove {
+      padding: 0 5px;
+      opacity: .38;
+    }
+
+    .remove:hover,
+    .remove:focus-visible { opacity: 1; }
+
+    .add-region {
+      width: min(540px, 100%);
+      margin: 0 auto;
+      padding: 0 0 clamp(30px, 6vw, 70px);
+    }
+
+    .add-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .add-row select {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 620px) {
+      .clock-shell { padding: 16px; gap: 12px; }
+      .clock-orb { width: min(76vw, 47vh, 360px); min-width: 210px; }
+      .controls { grid-template-columns: minmax(0, 1fr) auto; gap: 14px; }
+      .sliders { gap: 10px; }
+      .channel { gap: 4px; }
+      .world-shell { padding: 16px; }
+      .globe-wrap { min-height: 330px; }
+      #color-globe { width: min(82vw, 390px); min-width: 240px; }
+      .world-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .add-row { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .clock-orb,
+      .world-color { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="clock-shell">
+    <header class="topbar">
+      <span class="brand">시분초 / RGB</span>
+      <button type="button" id="world-open">세계 시간</button>
+    </header>
+
+    <section class="clock-face" aria-label="현재 시각을 나타내는 색">
+      <div class="clock-orb" id="clock-orb" role="img" aria-label="00시 00분 00초의 색"></div>
+    </section>
+
+    <section class="controls" aria-label="시, 분, 초 조절">
+      <div class="sliders">
+        <label class="channel" for="hour-range">
+          <output id="hour-output">00</output>
+          <input id="hour-range" type="range" min="0" max="23" step="1" value="0" aria-label="시">
+        </label>
+        <label class="channel" for="minute-range">
+          <output id="minute-output">00</output>
+          <input id="minute-range" type="range" min="0" max="59" step="1" value="0" aria-label="분">
+        </label>
+        <label class="channel" for="second-range">
+          <output id="second-output">00</output>
+          <input id="second-range" type="range" min="0" max="59" step="1" value="0" aria-label="초">
+        </label>
+      </div>
+      <output class="color-code" id="hex">#000000</output>
+      <button class="resume" type="button" id="resume" hidden>현재 시각</button>
+      <span class="sr-only" id="status" aria-live="polite">실시간</span>
+    </section>
+  </main>
+
+  <dialog id="world-dialog" aria-labelledby="world-title">
+    <div class="world-shell">
+      <header class="world-head">
+        <h2 class="world-title" id="world-title">COLOR WORLD</h2>
+        <button type="button" id="world-close" aria-label="세계 시간 닫기">닫기</button>
+      </header>
+
+      <div class="globe-wrap">
+        <canvas id="color-globe" width="420" height="420" role="img" aria-label="경도별 현재 시간을 색으로 표현한 지구본"></canvas>
+      </div>
+
+      <div>
+        <section class="world-grid" id="world-grid" aria-label="추가한 지역의 시간 색"></section>
+        <section class="add-region" aria-label="지역 추가">
+          <form class="add-row" id="add-form">
+            <label class="sr-only" for="zone-select">추가할 지역</label>
+            <select id="zone-select" required></select>
+            <button type="submit">추가</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      const $ = selector => document.querySelector(selector);
+      const clockOrb = $('#clock-orb');
+      const hexEl = $('#hex');
+      const faviconNode = document.querySelector("link[rel*='icon']");
+      const statusEl = $('#status');
+      const resumeButton = $('#resume');
+      const ranges = [$('#hour-range'), $('#minute-range'), $('#second-range')];
+      const outputs = [$('#hour-output'), $('#minute-output'), $('#second-output')];
+      const worldDialog = $('#world-dialog');
+      const worldGrid = $('#world-grid');
+      const zoneSelect = $('#zone-select');
+      const globe = $('#color-globe');
+      const globeContext = globe.getContext('2d', { alpha: true });
+      const storageKey = 'sifuncho-world-zones';
+      let isLive = true;
+      let globeRotation = 0;
+      let dragging = false;
+      let dragStartX = 0;
+      let dragStartRotation = 0;
+      let faviconColor = '';
+
+      const zoneOptions = [
+        ['Asia/Seoul', '서울'], ['Asia/Tokyo', '도쿄'], ['Asia/Shanghai', '상하이'],
+        ['Asia/Hong_Kong', '홍콩'], ['Asia/Singapore', '싱가포르'], ['Asia/Bangkok', '방콕'],
+        ['Asia/Kolkata', '뉴델리'], ['Asia/Dubai', '두바이'], ['Europe/Istanbul', '이스탄불'],
+        ['Europe/Athens', '아테네'], ['Europe/Paris', '파리'], ['Europe/London', '런던'],
+        ['Africa/Cairo', '카이로'], ['Africa/Johannesburg', '요하네스버그'],
+        ['America/New_York', '뉴욕'], ['America/Toronto', '토론토'], ['America/Chicago', '시카고'],
+        ['America/Denver', '덴버'], ['America/Los_Angeles', '로스앤젤레스'],
+        ['America/Vancouver', '밴쿠버'], ['America/Sao_Paulo', '상파울루'],
+        ['Pacific/Honolulu', '호놀룰루'], ['Pacific/Auckland', '오클랜드'],
+        ['Australia/Sydney', '시드니'], ['Australia/Perth', '퍼스'], ['UTC', '협정 세계시']
+      ];
+      const zoneLabels = Object.fromEntries(zoneOptions);
+      const defaultZones = ['Asia/Seoul', 'Asia/Tokyo', 'Europe/London', 'America/New_York'];
+      let selectedZones;
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        selectedZones = Array.isArray(saved) && saved.length ? saved.filter(zone => zoneLabels[zone]) : defaultZones;
+      } catch {
+        selectedZones = defaultZones;
+      }
+
+      const pad = value => String(value).padStart(2, '0');
+      const channel = (value, max) => Math.round((value / max) * 255);
+      const toHex = value => value.toString(16).padStart(2, '0');
+
+      function colorFromTime(hour, minute, second) {
+        const rgb = [channel(hour, 23), channel(minute, 59), channel(second, 59)];
+        return { rgb, css: `rgb(${rgb.join(' ')})`, hex: `#${rgb.map(toHex).join('')}` };
+      }
+
+      function updateFavicon(hex) {
+        if (!faviconNode || faviconColor === hex) return;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="${hex}"/></svg>`;
+        faviconNode.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        faviconColor = hex;
+      }
+
+      window.getFavicon = function getFavicon() {
+        const node = document.querySelector("link[rel*='icon']");
+        return node ? node.href : null;
+      };
+
+      function localParts(date = new Date()) {
+        return [date.getHours(), date.getMinutes(), date.getSeconds()];
+      }
+
+      function zonedParts(date, timeZone) {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hourCycle: 'h23'
+        }).formatToParts(date);
+        const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+        return [Number(values.hour), Number(values.minute), Number(values.second)];
+      }
+
+      function setMainClock(hour, minute, second) {
+        const color = colorFromTime(hour, minute, second);
+        clockOrb.style.setProperty('--orb', color.css);
+        clockOrb.setAttribute('aria-label', `${pad(hour)}시 ${pad(minute)}분 ${pad(second)}초의 색, ${color.hex}`);
+        updateFavicon(color.hex);
+        hexEl.value = color.hex.toUpperCase();
+        hexEl.textContent = color.hex.toUpperCase();
+
+        [hour, minute, second].forEach((value, index) => {
+          ranges[index].value = value;
+          outputs[index].value = pad(value);
+          outputs[index].textContent = pad(value);
+        });
+      }
+
+      function setLive(next) {
+        isLive = next;
+        statusEl.textContent = next ? '실시간' : '수동 조작 중';
+        resumeButton.hidden = next;
+      }
+
+      function tick() {
+        const now = new Date();
+        if (isLive) setMainClock(...localParts(now));
+        if (worldDialog.open) {
+          renderWorldTimes(now);
+          renderGlobe(now);
+        }
+      }
+
+      ranges.forEach(range => {
+        range.addEventListener('input', () => {
+          setLive(false);
+          setMainClock(...ranges.map(input => Number(input.value)));
+        });
+      });
+
+      resumeButton.addEventListener('click', () => {
+        setLive(true);
+        tick();
+      });
+
+      function renderWorldTimes(now = new Date()) {
+        worldGrid.innerHTML = '';
+        selectedZones.forEach(timeZone => {
+          const [hour, minute, second] = zonedParts(now, timeZone);
+          const color = colorFromTime(hour, minute, second);
+          const label = zoneLabels[timeZone] || timeZone;
+          const item = document.createElement('article');
+          item.className = 'world-item';
+          item.innerHTML = `
+            <div class="world-color" role="img" aria-label="${label}, ${pad(hour)}시 ${pad(minute)}분 ${pad(second)}초, ${color.hex}" style="background:${color.css}"></div>
+            <div class="world-meta"><strong>${label}</strong><button class="remove" type="button" data-zone="${timeZone}" aria-label="${label} 삭제">×</button></div>`;
+          worldGrid.append(item);
+        });
+      }
+
+      function renderGlobe(now = new Date()) {
+        const size = globe.width;
+        const radius = size / 2 - 3;
+        const center = size / 2;
+        const image = globeContext.createImageData(size, size);
+        const utc = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+        const seconds = now.getUTCSeconds();
+
+        for (let y = 0; y < size; y += 1) {
+          const ny = (y - center) / radius;
+          for (let x = 0; x < size; x += 1) {
+            const nx = (x - center) / radius;
+            const distance = nx * nx + ny * ny;
+            const index = (y * size + x) * 4;
+            if (distance > 1) continue;
+
+            const nz = Math.sqrt(1 - distance);
+            const longitude = Math.atan2(nx, nz) + globeRotation;
+            const localDecimal = (utc + longitude * 12 / Math.PI + 48) % 24;
+            const hour = Math.floor(localDecimal);
+            const minute = Math.floor((localDecimal - hour) * 60);
+            const [red, green, blue] = colorFromTime(hour, minute, seconds).rgb;
+            const edge = Math.pow(nz, .34);
+            const light = .43 + edge * .57;
+            const sheen = Math.max(0, 1 - Math.hypot(nx + .34, ny + .3) * 2.5) * 28;
+
+            image.data[index] = Math.min(255, red * light + sheen);
+            image.data[index + 1] = Math.min(255, green * light + sheen);
+            image.data[index + 2] = Math.min(255, blue * light + sheen);
+            image.data[index + 3] = Math.min(255, 170 + edge * 85);
+          }
+        }
+
+        globeContext.clearRect(0, 0, size, size);
+        globeContext.putImageData(image, 0, 0);
+      }
+
+      function saveZones() {
+        localStorage.setItem(storageKey, JSON.stringify(selectedZones));
+      }
+
+      function refreshZoneSelect() {
+        const available = zoneOptions.filter(([value]) => !selectedZones.includes(value));
+        zoneSelect.innerHTML = available.length
+          ? available.map(([value, label]) => `<option value="${value}">${label} · ${value}</option>`).join('')
+          : '<option value="">추가할 수 있는 지역이 없습니다</option>';
+        zoneSelect.disabled = !available.length;
+        $('#add-form button').disabled = !available.length;
+      }
+
+      function openWorld() {
+        refreshZoneSelect();
+        renderWorldTimes();
+        renderGlobe();
+        worldDialog.showModal();
+      }
+
+      $('#world-open').addEventListener('click', openWorld);
+      $('#world-close').addEventListener('click', () => worldDialog.close());
+
+      worldGrid.addEventListener('click', event => {
+        const button = event.target.closest('[data-zone]');
+        if (!button || selectedZones.length <= 1) return;
+        selectedZones = selectedZones.filter(zone => zone !== button.dataset.zone);
+        saveZones();
+        renderWorldTimes();
+        refreshZoneSelect();
+      });
+
+      $('#add-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const zone = zoneSelect.value;
+        if (!zone || selectedZones.includes(zone)) return;
+        selectedZones.push(zone);
+        saveZones();
+        renderWorldTimes();
+        refreshZoneSelect();
+      });
+
+      globe.addEventListener('pointerdown', event => {
+        dragging = true;
+        dragStartX = event.clientX;
+        dragStartRotation = globeRotation;
+        globe.setPointerCapture(event.pointerId);
+      });
+
+      globe.addEventListener('pointermove', event => {
+        if (!dragging) return;
+        globeRotation = dragStartRotation + (event.clientX - dragStartX) / globe.clientWidth * Math.PI * 2;
+        renderGlobe();
+      });
+
+      globe.addEventListener('pointerup', event => {
+        dragging = false;
+        globe.releasePointerCapture(event.pointerId);
+      });
+
+      globe.addEventListener('pointercancel', () => { dragging = false; });
+
+      tick();
+      setInterval(tick, 1000);
+
+      window.sifuncho = Object.freeze({
+        showWorldTimes: openWorld,
+        resumeLiveTime: () => { setLive(true); tick(); },
+        setTime: (hour, minute, second) => {
+          setLive(false);
+          setMainClock(
+            Math.max(0, Math.min(23, Number(hour))),
+            Math.max(0, Math.min(59, Number(minute))),
+            Math.max(0, Math.min(59, Number(second)))
+          );
+        }
+      });
+
+      const modelContext = document.modelContext;
+      if (modelContext?.registerTool) {
+        const reportToolError = error => console.warn('WebMCP tool registration failed', error);
+        const register = tool => {
+          try { Promise.resolve(modelContext.registerTool(tool)).catch(reportToolError); }
+          catch (error) { reportToolError(error); }
+        };
+
+        register({
+          name: 'set_clock_time',
+          title: '시계 시간 설정',
+          description: '시·분·초를 지정해 RGB 시계를 수동 모드로 설정합니다.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              hour: { type: 'integer', minimum: 0, maximum: 23 },
+              minute: { type: 'integer', minimum: 0, maximum: 59 },
+              second: { type: 'integer', minimum: 0, maximum: 59 }
+            },
+            required: ['hour', 'minute', 'second'],
+            additionalProperties: false
+          },
+          annotations: { readOnlyHint: false, untrustedContentHint: false },
+          execute(input) {
+            const { hour, minute, second } = input || {};
+            if (![hour, minute, second].every(Number.isInteger) || hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+              throw new TypeError('hour, minute, second가 유효한 범위의 정수여야 합니다.');
+            }
+            window.sifuncho.setTime(hour, minute, second);
+            return { mode: 'manual', time: `${pad(hour)}:${pad(minute)}:${pad(second)}`, color: colorFromTime(hour, minute, second).hex };
+          }
+        });
+
+        register({
+          name: 'resume_live_clock',
+          title: '실시간 시계로 복귀',
+          description: 'RGB 시계를 현재 지역의 실시간 시각으로 되돌립니다.',
+          inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+          annotations: { readOnlyHint: false, untrustedContentHint: false },
+          execute() {
+            window.sifuncho.resumeLiveTime();
+            return { mode: 'live', color: hexEl.textContent };
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

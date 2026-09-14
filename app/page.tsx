@@ -46,6 +46,13 @@ const projects = [
     description: "움직이는 SCC 타이포그래피를 만들고 내보냅니다.",
     kind: "Motion tool",
   },
+  {
+    href: "/sibuncho",
+    number: "07",
+    title: "시분초",
+    description: "24시간의 시·분·초를 RGB 색으로 보여주는 실시간 세계시계.",
+    kind: "World clock",
+  },
 ];
 
 export default function ArchiveHome() {
