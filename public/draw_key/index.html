@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="키보드 위 키 사이의 이동 방향을 선으로 이어 그리는 인터랙티브 작업" />
+    <title>draw key</title>
+    <link rel="stylesheet" href="/draw_key/style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="visually-hidden" id="instructions">
+        처음 누른 키가 중앙 점의 기준이 됩니다. 다음 키부터는 두 키 사이의
+        키보드상 이동 방향으로 현재 점에서 일정 거리씩 선이 이어집니다.
+        같은 키를 반복하면 진행 방향으로 계속 그립니다. 입력을 멈추고
+        10초가 지나면 그림 전체가 보입니다. 스페이스나 엔터로 획을 끝낼
+        수 있으며, 다음 획의 첫 키는 새 기준만 정합니다. 방향키로도
+        그릴 수 있습니다.
+      </p>
+      <canvas id="drawing" aria-label="키보드로 그리는 캔버스" aria-describedby="instructions"></canvas>
+    </main>
+    <script src="/draw_key/main.js" defer></script>
+  </body>
+</html>

@@ -53,6 +53,13 @@ const projects = [
     description: "24시간의 시·분·초를 RGB 색으로 보여주는 실시간 세계시계.",
     kind: "World clock",
   },
+  {
+    href: "/draw_key",
+    number: "08",
+    title: "draw key",
+    description: "키보드 위 키 사이의 이동 방향을 선으로 이어, 키 입력의 움직임을 그림으로 기록합니다.",
+    kind: "Keyboard drawing",
+  },
 ];
 
 export default function ArchiveHome() {

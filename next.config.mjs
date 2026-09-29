@@ -6,6 +6,7 @@ const staticProjects = [
   "rgb-popups",
   "scc-motion",
   "sibuncho",
+  "draw_key",
 ];
 
 const nextConfig = {
