@@ -57,6 +57,33 @@ textarea {
   margin-bottom: 64px;
 }
 
+
+.archiveTopline {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.archiveTopline p {
+  margin: 0;
+}
+
+.langToggle {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.langToggle:hover,
+.langToggle:focus-visible {
+  background: var(--ink);
+  color: var(--bg);
+  outline: none;
+}
+
 .archiveIntro {
   margin: 20px 0;
   max-width: 650px;
