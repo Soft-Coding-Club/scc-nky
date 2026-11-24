@@ -148,8 +148,12 @@ export default function ArchiveHome() {
   } | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === "ko" || saved === "en") setLang(saved);
+    try {
+      const saved = window.localStorage.getItem(LANG_STORAGE_KEY);
+      if (saved === "ko" || saved === "en") setLang(saved);
+    } catch {
+      // Sandboxed embeds can block storage. Keep the default language.
+    }
   }, []);
 
   useEffect(() => {
@@ -159,7 +163,11 @@ export default function ArchiveHome() {
   const toggleLang = () => {
     const next: Lang = lang === "en" ? "ko" : "en";
     setLang(next);
-    window.localStorage.setItem(LANG_STORAGE_KEY, next);
+    try {
+      window.localStorage.setItem(LANG_STORAGE_KEY, next);
+    } catch {
+      // The choice still applies to this visit when storage is unavailable.
+    }
   };
 
   const t = copy[lang];
