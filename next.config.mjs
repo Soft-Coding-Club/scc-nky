@@ -7,6 +7,7 @@ const staticProjects = [
   "scc-motion",
   "sibuncho",
   "draw_key",
+  "mobile/1",
 ];
 
 const nextConfig = {

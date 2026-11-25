@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>404 Not Found</title>
+<style>
+  /* ─────────────────────────────────────────────
+     1) The 404 page — rendered exactly like a bare
+        nginx error page in Safari (980px layout,
+        Times, UA-default h1 / hr), scaled to fit.
+     ───────────────────────────────────────────── */
+  html { color-scheme: light; background: #fff; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { margin: 0; background: #fff; touch-action: manipulation; }
+
+  .nginx-clip { overflow: hidden; }
+  .nginx {
+    display: flow-root;              /* keep h1 margin inside the scaled box */
+    width: 980px;
+    padding: 0 8px 8px;              /* UA body margin, top collapses into h1 */
+    box-sizing: border-box;
+    transform-origin: 0 0;
+    font: 16px Times, "Times New Roman", serif;
+    color: #000;
+  }
+  .nginx h1 { font-size: 2em; margin: 0.67em 0; font-weight: bold; }
+
+  @keyframes buzz {
+    0%, 100% { translate: 0 0; }
+    20% { translate: -2px 0; } 40% { translate: 2px 0; }
+    60% { translate: -1.5px 0; } 80% { translate: 1.5px 0; }
+  }
+  .nginx-clip.buzz { animation: buzz 90ms linear 6; }
+
+  /* ─────────────────────────────────────────────
+     2) iOS notification banners
+     ───────────────────────────────────────────── */
+  :root {
+    --font: system-ui, -apple-system, "SF Pro Text", "Apple SD Gothic Neo", "Pretendard", "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    --glass: rgba(246, 246, 248, 0.74);
+    --glass-solid: #f4f4f6;
+    --label: #000;
+    --secondary: rgba(60, 60, 67, 0.6);
+    --platter-shadow:
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.9),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.45),
+      0 0 0 0.5px rgba(0, 0, 0, 0.06),
+      0 6px 16px -4px rgba(0, 0, 0, 0.10),
+      0 18px 40px -12px rgba(0, 0, 0, 0.16);
+    --spring: cubic-bezier(0.2, 0.95, 0.3, 1.04);
+    --spring-soft: cubic-bezier(0.25, 0.9, 0.3, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --glass: rgba(44, 44, 46, 0.80);
+      --glass-solid: #2c2c2e;
+      --label: #fff;
+      --secondary: rgba(235, 235, 245, 0.6);
+      --platter-shadow:
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.16),
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+        0 6px 16px -4px rgba(0, 0, 0, 0.22),
+        0 18px 40px -12px rgba(0, 0, 0, 0.34);
+    }
+  }
+
+  .banner-layer {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 100%;
+    margin: 0; padding: 0; border: 0;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
+    pointer-events: none;
+    transform-origin: 0 0;
+    z-index: 2147483000;
+  }
+
+  .stack {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: 0; right: 0;
+    height: 0;
+  }
+
+  .banner {
+    --d: 0;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    width: min(100% - 16px, 410px);
+    margin: 0 auto;
+    transform-origin: 50% 100%;
+    transform: translate3d(0, calc(var(--d) * 9px), 0) scale(calc(1 - var(--d) * 0.05));
+    z-index: calc(10 - var(--d));
+    transition: transform 560ms var(--spring-soft), opacity 260ms ease;
+  }
+  .banner[data-depth="3"] { opacity: 0; }
+
+  .platter {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 64px;
+    padding: 12px 14px 12px 12px;
+    box-sizing: border-box;
+    border-radius: 24px;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(30px) saturate(1.9);
+    backdrop-filter: blur(30px) saturate(1.9);
+    box-shadow: var(--platter-shadow);
+    color: var(--label);
+    font-family: var(--font);
+    overflow: hidden;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: default;
+    outline: none;
+  }
+  .platter:focus-visible { box-shadow: var(--platter-shadow), 0 0 0 3px rgba(0, 122, 255, 0.55); }
+  .banner:not([data-depth="0"]) .platter { height: var(--front-h, 64px); pointer-events: none; }
+
+  .n-content { display: contents; }
+  .n-lead, .n-text { transition: opacity 200ms ease; }
+  .banner:not([data-depth="0"]) .n-lead,
+  .banner:not([data-depth="0"]) .n-text { opacity: 0; }
+
+  /* App icon (non-communication) — 38pt continuous-corner squircle */
+  .n-lead { position: relative; flex: none; width: 38px; height: 38px; }
+  .app-icon {
+    width: 38px; height: 38px;
+    border-radius: 8.6px;
+    display: grid; place-items: center;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  }
+  .app-icon svg { width: 100%; height: 100%; display: block; }
+
+  /* Communication notification — contact avatar + app badge */
+  .avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: #fff;
+    font: 600 16px/1 var(--font);
+    letter-spacing: -0.3px;
+    overflow: hidden;
+  }
+  .avatar.emoji { font-size: 20px; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .badge {
+    position: absolute;
+    right: -3px; bottom: -3px;
+    width: 17px; height: 17px;
+    border-radius: 4.4px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1.5px var(--glass-solid);
+  }
+  .badge svg { width: 100%; height: 100%; display: block; }
+
+  .n-text { flex: 1; min-width: 0; }
+  .n-head { display: flex; align-items: baseline; gap: 8px; }
+  .n-title {
+    flex: 1; min-width: 0;
+    font: 600 15px/20px var(--font);
+    letter-spacing: -0.24px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .n-time {
+    flex: none;
+    font: 400 13px/18px var(--font);
+    letter-spacing: -0.08px;
+    color: var(--secondary);
+  }
+  .n-body {
+    margin: 0;
+    font: 400 15px/20px var(--font);
+    letter-spacing: -0.24px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+  .n-summary {
+    display: inline-block;
+    width: 13px; height: 13px;
+    margin-right: 3px;
+    vertical-align: -1px;
+    color: var(--secondary);
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .haptic { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+
+  /* ─────────────────────────────────────────────
+     3) Hidden remote (triple-tap the page, or #ctl)
+     ───────────────────────────────────────────── */
+  .sheet {
+    position: fixed;
+    inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 8px) 0;
+    width: min(100% - 16px, 420px);
+    max-height: 80dvh;
+    margin: 0 auto;
+    padding: 8px 16px 18px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 30px;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(30px) saturate(1.9);
+    backdrop-filter: blur(30px) saturate(1.9);
+    box-shadow: var(--platter-shadow);
+    color: var(--label);
+    font-family: var(--font);
+    overflow: auto;
+  }
+  .sheet::backdrop { background: rgba(0, 0, 0, 0.18); }
+  .sheet[open] { animation: sheet-in 420ms var(--spring); }
+  @keyframes sheet-in { from { transform: translateY(110%); } }
+  .grabber { width: 36px; height: 5px; border-radius: 3px; background: rgba(127, 127, 127, 0.4); margin: 0 auto 10px; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  .sheet-head h2 { margin: 0; font: 700 17px/22px var(--font); letter-spacing: -0.4px; outline: none; }
+  .sheet-done { appearance: none; border: 0; background: none; color: #007aff; font: 600 17px var(--font); padding: 6px 2px; cursor: pointer; }
+  .sheet-sub { margin: 0 0 14px; font: 400 13px/18px var(--font); color: var(--secondary); }
+  .sheet-sub b { font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px; margin-bottom: 16px; }
+  .tile {
+    appearance: none; border: 0; background: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    color: var(--label); font: 500 11px/13px var(--font); letter-spacing: -0.1px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .tile .app-icon { width: 54px; height: 54px; border-radius: 12.2px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.08); }
+  .tile .app-icon.glyph { background: rgba(127, 127, 127, 0.16); font-size: 26px; }
+  .tile:active .app-icon { transform: scale(0.92); filter: brightness(0.92); }
+  .tile .app-icon { transition: transform 120ms ease; }
+  .rows { border-radius: 12px; background: rgba(127, 127, 127, 0.1); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; font: 400 15px/20px var(--font); }
+  .row + .row { border-top: 0.5px solid rgba(127, 127, 127, 0.25); }
+  .row input { accent-color: #34c759; width: 20px; height: 20px; margin: 0; }
+  .sheet-foot { margin: 12px 4px 0; font: 400 12px/16px var(--font); color: var(--secondary); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .banner, .n-lead, .n-text { transition-duration: 1ms; }
+    .sheet[open] { animation: none; }
+    .nginx-clip.buzz { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nginx-clip" id="nginx-clip">
+  <div class="nginx" id="nginx">
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+  </div>
+</div>
+
+<div class="banner-layer" id="banner-layer" popover="manual">
+  <div class="stack" id="stack"></div>
+</div>
+
+<div class="sr-only" id="sr-live" aria-live="assertive" aria-atomic="true"></div>
+<label class="haptic" id="haptic" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+
+<dialog class="sheet" id="remote" aria-labelledby="remote-title">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h2 id="remote-title" tabindex="-1" autofocus>알림 리모컨</h2>
+    <button type="button" class="sheet-done" id="remote-done">완료</button>
+  </div>
+  <p class="sheet-sub" id="remote-audio">소리 꺼짐 · 화면을 한 번 탭하면 켜져요</p>
+  <div class="tiles" id="tiles"></div>
+  <div class="rows">
+    <label class="row">자동 알림 <input type="checkbox" switch id="auto-toggle" checked></label>
+    <label class="row">소리 <input type="checkbox" switch id="sound-toggle" checked></label>
+  </div>
+  <p class="sheet-foot">빈 화면을 세 번 연속 탭하거나 주소 끝에 #ctl 을 붙이면 이 리모컨이 열려요.</p>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  // ════════════════════════════════════════════
+  // 0. Utilities
+  // ════════════════════════════════════════════
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Physically-based spring → CSS linear() easing
+  function springEasing(zeta, samples = 56) {
+    const w = 6.6 / zeta;
+    const wd = w * Math.sqrt(1 - zeta * zeta);
+    const pts = [];
+    for (let i = 0; i <= samples; i++) {
+      const t = i / samples;
+      const e = Math.exp(-zeta * w * t);
+      pts.push(+(1 - e * (Math.cos(wd * t) + ((zeta * w) / wd) * Math.sin(wd * t))).toFixed(4));
+    }
+    pts[samples] = 1;
+    return `linear(${pts.join(", ")})`;
+  }
+  const HAS_LINEAR = window.CSS?.supports?.("transition-timing-function", "linear(0, 1)");
+  const SPRING_DROP = HAS_LINEAR ? springEasing(0.74) : "cubic-bezier(0.2, 0.95, 0.3, 1.04)";
+  const SPRING_SOFT = HAS_LINEAR ? springEasing(0.88) : "cubic-bezier(0.25, 0.9, 0.3, 1)";
+  document.documentElement.style.setProperty("--spring", SPRING_DROP);
+  document.documentElement.style.setProperty("--spring-soft", SPRING_SOFT);
+
+  // ════════════════════════════════════════════
+  // 1. 404 page: render at Safari's 980px layout width
+  // ════════════════════════════════════════════
+  const nginx = $("nginx");
+  function fitNginx() {
+    const vw = document.documentElement.clientWidth;
+    if (vw < 980) {
+      nginx.style.width = "980px";
+      nginx.style.transform = `scale(${vw / 980})`;
+      $("nginx-clip").style.height = `${nginx.offsetHeight * (vw / 980)}px`;
+    } else {
+      nginx.style.width = `${vw}px`;
+      nginx.style.transform = "";
+      $("nginx-clip").style.height = "";
+    }
+  }
+  fitNginx();
+  addEventListener("resize", fitNginx);
+
+  // ════════════════════════════════════════════
+  // 2. Sound engine (Web Audio, all synthesized)
+  // ════════════════════════════════════════════
+  const NOISE = new WeakMap();
+  function noiseBuffer(c) {
+    if (!NOISE.has(c)) {
+      const b = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      NOISE.set(c, b);
+    }
+    return NOISE.get(c);
+  }
+  function impulse(c, seconds, decay) {
+    const len = Math.floor(c.sampleRate * seconds);
+    const b = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = b.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return b;
+  }
+  function buildChain(c) {
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.knee.value = 10; comp.ratio.value = 5;
+    comp.attack.value = 0.002; comp.release.value = 0.15;
+    const master = c.createGain();
+    master.gain.value = 0.85;
+    master.connect(comp).connect(c.destination);
+    const verb = c.createConvolver();
+    verb.buffer = impulse(c, 1.2, 3.4);
+    const verbIn = c.createGain();
+    const wet = c.createGain();
+    wet.gain.value = 0.32;
+    verbIn.connect(verb).connect(wet).connect(master);
+    return { master, verbIn };
+  }
+
+  // Instrument kit bound to a context + chain
+  // Recorded voice clips (base64 mp3), decoded once per AudioContext
+  const CLIPS = {
+    katok: "data:audio/mpeg;base64,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VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7EGTdj/AAAH+AAAAIAAANIAAAAQAAAf4AAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZN2P8AAAf4AAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xBk3Y/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7EGTdj/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZN2P8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xBk3Y/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7EGTdj/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZN2P8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+xBk3Y/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==",
+  };
+  const DECODED = new WeakMap();
+  function loadClips(c) {
+    if (DECODED.has(c)) return DECODED.get(c).ready;
+    const entry = { buffers: {}, ready: null };
+    DECODED.set(c, entry);
+    entry.ready = Promise.all(Object.entries(CLIPS).map(([name, uri]) => {
+      const bin = atob(uri.split(",")[1]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Promise((res) => {
+        try {
+          const p = c.decodeAudioData(bytes.buffer, (buf) => { entry.buffers[name] = trimLead(buf); res(); }, () => res());
+          if (p && p.catch) p.catch(() => res());
+        } catch (_) { res(); }
+      });
+    }));
+    return entry.ready;
+  }
+  // Skip MP3 encoder padding so the clip fires right on time
+  function trimLead(buf) {
+    const d = buf.getChannelData(0);
+    let i = 0;
+    while (i < d.length && Math.abs(d[i]) < 0.008) i++;
+    buf._offset = Math.max(0, i - 40) / buf.sampleRate;
+    return buf;
+  }
+
+  function kit(c, chain) {
+    const bus = (send = 0.2) => {
+      const g = c.createGain();
+      g.connect(chain.master);
+      if (send > 0) {
+        const s = c.createGain();
+        s.gain.value = send;
+        g.connect(s).connect(chain.verbIn);
+      }
+      return g;
+    };
+    const env = (param, t, peak, attack, dur) => {
+      param.setValueAtTime(0.0001, t);
+      param.exponentialRampToValueAtTime(peak, t + attack);
+      param.exponentialRampToValueAtTime(0.0001, t + dur);
+    };
+    const sine = (f, t, stop, type = "sine") => {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.setValueAtTime(f, t);
+      o.start(t);
+      o.stop(stop);
+      return o;
+    };
+
+    const K = {
+      samples: DECODED.get(c)?.buffers || {},
+      // Recorded clip playback
+      sample(t, buf, { gain = 1, rate = 1, send = 0.1 } = {}) {
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        src.playbackRate.value = rate;
+        const g = c.createGain();
+        g.gain.value = gain;
+        src.connect(g).connect(bus(send));
+        src.start(t, buf._offset || 0);
+      },
+      // FM bell / glass
+      bell(t, f, { dur = 0.8, gain = 0.25, ratio = 3.5, index = 1.2, decay = 0.2, attack = 0.003, send = 0.25 } = {}) {
+        const out = bus(send);
+        const car = sine(f, t, t + dur + 0.05);
+        const mod = sine(f * ratio, t, t + dur + 0.05);
+        const mg = c.createGain();
+        mg.gain.setValueAtTime(f * index, t);
+        mg.gain.exponentialRampToValueAtTime(Math.max(1, f * 0.004), t + decay);
+        mod.connect(mg).connect(car.frequency);
+        const vca = c.createGain();
+        env(vca.gain, t, gain, attack, dur);
+        car.connect(vca).connect(out);
+      },
+      // Struck wooden bar
+      marimba(t, f, { gain = 0.3, dur = 0.5, send = 0.18 } = {}) {
+        const out = bus(send);
+        const parts = [[1, 1, dur], [3.93, 0.26, dur * 0.2], [9.1, 0.05, 0.03]];
+        parts.forEach(([mul, amp, d]) => {
+          const o = sine(f * mul, t, t + d + 0.03);
+          const g = c.createGain();
+          env(g.gain, t, gain * amp, 0.002, d);
+          o.connect(g).connect(out);
+        });
+        K.noise(t, 0.012, { type: "bandpass", freq: f * 2, q: 2, gain: gain * 0.25, attack: 0.001, send: 0 });
+      },
+      // Bubble pop with pitch sweep
+      pop(t, f0, f1, { dur = 0.14, gain = 0.4, send = 0.12 } = {}) {
+        const out = bus(send);
+        const o = sine(f0, t, t + dur + 0.03);
+        o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.45);
+        const o2 = sine(f0 * 2, t, t + dur + 0.03, "triangle");
+        o2.frequency.exponentialRampToValueAtTime(f1 * 2, t + dur * 0.45);
+        const g = c.createGain();
+        env(g.gain, t, gain, 0.004, dur);
+        const g2 = c.createGain();
+        env(g2.gain, t, gain * 0.12, 0.004, dur * 0.5);
+        o.connect(g).connect(out);
+        o2.connect(g2).connect(out);
+      },
+      // Filtered noise burst
+      noise(t, dur, { type = "bandpass", freq = 2000, q = 1, gain = 0.3, attack = 0.002, send = 0.05, dest = null } = {}) {
+        const src = c.createBufferSource();
+        src.buffer = noiseBuffer(c);
+        const f = c.createBiquadFilter();
+        f.type = type; f.frequency.value = freq; f.Q.value = q;
+        const g = c.createGain();
+        env(g.gain, t, gain, attack, dur);
+        src.connect(f).connect(g).connect(dest || bus(send));
+        src.start(t, Math.random() * 0.5);
+        src.stop(t + dur + 0.02);
+      },
+      // Formant-synthesized "카-톡!"
+      katok(t) {
+        const out = bus(0.1);
+        const post = c.createGain();
+        post.gain.value = 1.15;
+        const shelf = c.createBiquadFilter();
+        shelf.type = "highshelf"; shelf.frequency.value = 2800; shelf.gain.value = 5;
+        const sum = c.createGain();
+        sum.connect(shelf).connect(post).connect(out);
+
+        // Glottal source with a cute, high pitch contour (톡 lands higher)
+        const src = c.createOscillator();
+        src.type = "sawtooth";
+        const p = src.frequency;
+        p.setValueAtTime(395, t);
+        p.setValueAtTime(395, t + 0.042);
+        p.linearRampToValueAtTime(352, t + 0.152);
+        p.setValueAtTime(505, t + 0.2);
+        p.linearRampToValueAtTime(458, t + 0.305);
+        const amp = c.createGain();
+        const a = amp.gain;
+        a.setValueAtTime(0, t);
+        a.setValueAtTime(0, t + 0.04);           // ㅋ aspiration, no voicing
+        a.linearRampToValueAtTime(1, t + 0.058); // 아
+        a.setValueAtTime(1, t + 0.118);
+        a.linearRampToValueAtTime(0, t + 0.158);
+        a.setValueAtTime(0, t + 0.204);          // ㅌ closure
+        a.linearRampToValueAtTime(1.2, t + 0.214); // 오
+        a.setValueAtTime(1.2, t + 0.287);
+        a.linearRampToValueAtTime(0, t + 0.3);   // ㄱ — clipped stop
+        src.connect(amp);
+
+        // Formant bank: [ka onset, ka vowel /a/, to onset, to vowel /o/, Q, gain]
+        [
+          [700, 860, 620, 480, 4.5, 1.0],
+          [1700, 1320, 1550, 860, 7, 0.8],
+          [2450, 2700, 2650, 2480, 10, 0.38],
+          [3500, 3600, 3500, 3400, 12, 0.14],
+        ].forEach(([a0, a1, o0, o1, q, g]) => {
+          const bp = c.createBiquadFilter();
+          bp.type = "bandpass"; bp.Q.value = q;
+          bp.frequency.setValueAtTime(a0, t);
+          bp.frequency.setValueAtTime(a0, t + 0.042);
+          bp.frequency.exponentialRampToValueAtTime(a1, t + 0.09);
+          bp.frequency.setValueAtTime(o0, t + 0.2);
+          bp.frequency.exponentialRampToValueAtTime(o1, t + 0.245);
+          const fg = c.createGain();
+          fg.gain.value = g;
+          amp.connect(bp).connect(fg).connect(sum);
+        });
+        src.start(t);
+        src.stop(t + 0.33);
+
+        // ㅋ aspiration, ㅌ release burst
+        K.noise(t, 0.052, { type: "bandpass", freq: 2100, q: 1.3, gain: 0.32, attack: 0.004, send: 0.04 });
+        K.noise(t + 0.199, 0.018, { type: "highpass", freq: 3600, q: 0.7, gain: 0.42, attack: 0.001, send: 0.04 });
+      },
+      // Two-tone public-alert attention signal (853 Hz + 960 Hz)
+      alarm(t, segments) {
+        const out = bus(0.04);
+        const end = segments[segments.length - 1][1];
+        [853, 960].forEach((f) => {
+          const o = sine(f, t, t + end + 0.05);
+          const g = c.createGain();
+          g.gain.setValueAtTime(0, t);
+          segments.forEach(([s, e]) => {
+            g.gain.setValueAtTime(0, t + s);
+            g.gain.linearRampToValueAtTime(0.36, t + s + 0.012);
+            g.gain.setValueAtTime(0.36, t + e - 0.012);
+            g.gain.linearRampToValueAtTime(0, t + e);
+          });
+          o.connect(g).connect(out);
+        });
+      },
+      // Airy pad swell
+      pad(t, freqs, { dur = 1.2, gain = 0.06, attack = 0.18, send = 0.6 } = {}) {
+        const out = bus(send);
+        freqs.forEach((f, i) => {
+          const o = sine(f * (1 + (i % 2 ? 0.003 : -0.003)), t, t + dur + 0.05);
+          const g = c.createGain();
+          env(g.gain, t, gain, attack, dur);
+          o.connect(g).connect(out);
+        });
+      },
+    };
+    return K;
+  }
+
+  // One recipe per app — tuned to feel like that app's alert
+  const RECIPES = {
+    // 카카오톡: synthesized "카-톡!" voice
+    kakao: (K, t) => (K.samples.katok ? K.sample(t, K.samples.katok, { gain: 1, send: 0 }) : K.katok(t)),
+
+    // 메시지: classic three-note glassy "tri-tone"
+    imessage: (K, t) => {
+      [[0, 987.77], [0.118, 1318.51], [0.236, 1661.22]].forEach(([d, f], i) =>
+        K.bell(t + d, f, { dur: i === 2 ? 1.1 : 0.55, gain: 0.3, ratio: 3.5, index: 1.0, decay: 0.2, send: 0.3 })
+      );
+    },
+
+    // Instagram DM: soft double bubble "bloop-bloop"
+    insta: (K, t) => {
+      K.pop(t, 540, 880, { dur: 0.11, gain: 0.42 });
+      K.pop(t + 0.088, 720, 1260, { dur: 0.17, gain: 0.38 });
+      K.bell(t + 0.09, 2520, { dur: 0.25, gain: 0.035, ratio: 2, index: 0.3, decay: 0.05, send: 0.2 });
+    },
+
+    // YouTube (system default alert): bouncy marimba "rebound"
+    youtube: (K, t) => {
+      [[0, 1174.66, 0.3], [0.13, 1567.98, 0.27], [0.225, 1174.66, 0.16], [0.29, 1567.98, 0.1]].forEach(([d, f, g]) =>
+        K.marimba(t + d, f, { gain: g, dur: 0.42 })
+      );
+    },
+
+    // Toss: bright coin "띠링~"
+    toss: (K, t) => {
+      K.noise(t, 0.03, { type: "highpass", freq: 6500, q: 0.7, gain: 0.07, send: 0.1 });
+      K.bell(t, 1975.53, { dur: 0.32, gain: 0.27, ratio: 3.5, index: 1.4, decay: 0.07, send: 0.22 });
+      K.bell(t + 0.078, 2637.02, { dur: 1.0, gain: 0.3, ratio: 3.5, index: 1.6, decay: 0.16, send: 0.35 });
+      K.bell(t + 0.078, 3951.07, { dur: 0.6, gain: 0.05, ratio: 2, index: 0.4, decay: 0.1, send: 0.35 });
+    },
+
+    // 긴급재난문자: loud two-tone alert pattern
+    emergency: (K, t) => K.alarm(t, [[0, 0.9], [1.05, 1.95], [2.1, 3.7]]),
+
+    // Apple Intelligence / system: shimmering arpeggio over a soft pad
+    ios: (K, t) => {
+      K.pad(t, [523.25, 783.99, 1046.5], { dur: 1.3, gain: 0.05 });
+      [1046.5, 1318.51, 1567.98, 1975.53, 2349.32].forEach((f, i) =>
+        K.bell(t + 0.03 + i * 0.048, f, { dur: 1.0, gain: 0.1, ratio: 2, index: 0.45, decay: 0.3, attack: 0.01, send: 0.55 })
+      );
+    },
+  };
+
+  const Sound = (() => {
+    let ctx = null;
+    let chain = null;
+    let enabled = true;
+    const listeners = new Set();
+    const running = () => !!ctx && ctx.state === "running";
+    const emit = () => listeners.forEach((fn) => fn(running()));
+
+    function unlock() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!ctx) {
+        // Play through the iPhone silent switch (Safari 16.4+)
+        try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (_) {}
+        ctx = new AC({ latencyHint: "interactive" });
+        chain = buildChain(ctx);
+        loadClips(ctx);
+        ctx.addEventListener("statechange", emit);
+      }
+      if (ctx.state !== "running") {
+        ctx.resume().then(emit, () => {});
+        try {
+          const s = ctx.createBufferSource();
+          s.buffer = ctx.createBuffer(1, 1, 22050);
+          s.connect(ctx.destination);
+          s.start(0);
+        } catch (_) {}
+      }
+    }
+
+    function play(type) {
+      // Never queue: a suspended context would fire everything at once on unlock
+      if (!enabled || !running()) return false;
+      const recipe = RECIPES[type] || RECIPES.ios;
+      recipe(kit(ctx, chain), ctx.currentTime + 0.015);
+      return true;
+    }
+
+    // Offline render, for checking levels without speakers
+    async function analyse(type, seconds = 4.5) {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const c = new OAC(2, Math.ceil(44100 * seconds), 44100);
+      await loadClips(c);
+      (RECIPES[type] || RECIPES.ios)(kit(c, buildChain(c)), 0.01);
+      const buf = await c.startRendering();
+      const d = buf.getChannelData(0);
+      let peak = 0, sum = 0, last = 0;
+      for (let i = 0; i < d.length; i++) {
+        const v = Math.abs(d[i]);
+        if (!Number.isFinite(v)) return { type, error: "non-finite sample" };
+        if (v > peak) peak = v;
+        sum += v * v;
+        if (v > 0.001) last = i;
+      }
+      return { type, peak: +peak.toFixed(3), rmsDb: +(10 * Math.log10(sum / d.length + 1e-12)).toFixed(1), tail: +(last / 44100).toFixed(2) };
+    }
+
+    return {
+      unlock, play, analyse, running,
+      onChange: (fn) => listeners.add(fn),
+      setEnabled: (v) => { enabled = v; },
+    };
+  })();
+
+  ["pointerdown", "pointerup", "touchend", "click", "keydown"].forEach((evt) =>
+    addEventListener(evt, Sound.unlock, { capture: true, passive: true })
+  );
+
+  // Haptics: Android vibrate; iOS 18+ Safari ticks on <input switch> toggles
+  const VIBES = { kakao: [40, 60, 40], emergency: [600, 150, 600, 150, 1400], default: [30, 50, 30] };
+  const hapticLabel = $("haptic");
+  function haptic(type) {
+    if (navigator.userActivation?.hasBeenActive) {
+      try { navigator.vibrate?.(VIBES[type] || VIBES.default); } catch (_) {}
+    }
+    try { hapticLabel.click(); } catch (_) {}
+  }
+
+  // ════════════════════════════════════════════
+  // 3. App themes & notification content
+  // ════════════════════════════════════════════
+  const ICONS = {
+    kakao: `<svg viewBox="0 0 38 38"><rect width="38" height="38" fill="#FEE500"/><path fill="#3A1D1D" d="M19 9.2c-6.5 0-11.7 4.1-11.7 9.2 0 3.3 2.2 6.2 5.5 7.8-.2.6-1.1 3.9-1.2 4.1-.1.4.1.4.3.3.2-.1 3.6-2.4 5.1-3.4.7.1 1.3.1 2 .1 6.5 0 11.7-4.1 11.7-9.2S25.5 9.2 19 9.2z"/><text x="19" y="20.6" fill="#FEE500" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="5.6" text-anchor="middle" letter-spacing="-.1">TALK</text></svg>`,
+    imessage: `<svg viewBox="0 0 38 38"><defs><linearGradient id="gMsg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67FF81"/><stop offset="1" stop-color="#01B41F"/></linearGradient></defs><rect width="38" height="38" fill="url(#gMsg)"/><path fill="#fff" d="M19 8.6c-6.9 0-12.4 4.5-12.4 10.1 0 3.2 1.8 6.1 4.7 7.9-.3 1.3-1.1 2.9-2.1 3.9 2.3-.1 4.5-1.1 5.9-2.3 1.2.3 2.5.5 3.9.5 6.9 0 12.4-4.5 12.4-10S25.9 8.6 19 8.6z"/></svg>`,
+    insta: `<svg viewBox="0 0 38 38"><defs><radialGradient id="gIg" cx=".28" cy="1.05" r="1.25"><stop offset="0" stop-color="#FFDD55"/><stop offset=".12" stop-color="#FFDD55"/><stop offset=".45" stop-color="#FF543E"/><stop offset=".7" stop-color="#C837AB"/><stop offset="1" stop-color="#3B5BDB"/></radialGradient></defs><rect width="38" height="38" fill="url(#gIg)"/><g fill="none" stroke="#fff" stroke-width="2.6"><rect x="9" y="9" width="20" height="20" rx="6"/><circle cx="19" cy="19" r="4.8"/></g><circle cx="25" cy="13" r="1.5" fill="#fff"/></svg>`,
+    youtube: `<svg viewBox="0 0 38 38"><rect width="38" height="38" fill="#fff"/><rect x="6.5" y="11" width="25" height="16.6" rx="5" fill="#FF0033"/><path fill="#fff" d="M16.6 15.2v8.2l6.8-4.1z"/></svg>`,
+    toss: `<svg viewBox="0 0 38 38"><rect width="38" height="38" fill="#fff"/><path fill="#0064FF" d="M10.5 13.5c0-1.4 1.1-2.5 2.5-2.5h12c1.4 0 2.5 1.1 2.5 2.5s-1.1 2.5-2.5 2.5h-3.5v10.6a2.5 2.5 0 0 1-5 0V16H13c-1.4 0-2.5-1.1-2.5-2.5z"/></svg>`,
+    emergency: `<svg viewBox="0 0 38 38"><defs><linearGradient id="gAl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5E4D"/><stop offset="1" stop-color="#E5281B"/></linearGradient></defs><rect width="38" height="38" fill="url(#gAl)"/><path fill="#fff" d="M19 8.8c.8 0 1.5.4 1.9 1.1l9.3 16.2c.8 1.4-.2 3.2-1.9 3.2H9.7c-1.7 0-2.7-1.8-1.9-3.2l9.3-16.2c.4-.7 1.1-1.1 1.9-1.1z"/><path fill="#E5281B" d="M17.6 15.2h2.8l-.4 7.3h-2zM19 24a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2z"/></svg>`,
+    ios: `<svg viewBox="0 0 38 38"><defs><linearGradient id="gAi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF9F0A"/><stop offset=".35" stop-color="#FF2D78"/><stop offset=".68" stop-color="#AF52DE"/><stop offset="1" stop-color="#0A84FF"/></linearGradient></defs><rect width="38" height="38" fill="url(#gAi)"/><path fill="#fff" d="M19 8.5c.6 5.6 4.9 9.9 10.5 10.5-5.6.6-9.9 4.9-10.5 10.5-.6-5.6-4.9-9.9-10.5-10.5C14.1 18.4 18.4 14.1 19 8.5z"/></svg>`,
+  };
+
+  const APPS = {
+    kakao:     { name: "카카오톡",        icon: ICONS.kakao,     comm: true,  duration: 5200 },
+    imessage:  { name: "메시지",          icon: ICONS.imessage,  comm: true,  duration: 5200 },
+    insta:     { name: "Instagram",      icon: ICONS.insta,     comm: true,  duration: 5200 },
+    youtube:   { name: "YouTube",        icon: ICONS.youtube,   comm: false, duration: 5200 },
+    toss:      { name: "토스",            icon: ICONS.toss,      comm: false, duration: 5600 },
+    emergency: { name: "긴급 재난 문자",   icon: ICONS.emergency, comm: false, duration: 9000 },
+    ios:       { name: "Apple Intelligence", icon: ICONS.ios,   comm: false, duration: 5600 },
+  };
+
+  // KakaoTalk default profile photo (used for every KakaoTalk sender)
+  const KAKAO_PROFILE = "data:image/jpeg;base64,/9j//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgGBgcGBwgICAgICAkJCQoKCgkJCQkKCgoKCgoMDAwKCgoKCgoKDAwMDA0ODQ0NDA0ODg8PDxISEREVFRUZGR//xACGAAEBAAMBAQAAAAAAAAAAAAAAAQUEAwIGAQEBAQEBAQAAAAAAAAAAAAAAAQMCBAUQAAIBAQIKCQUBAQEAAAAAAAABAgMEEQUhItFhcbGBMVISQTITUaHBM3OR4RQjYvCS0hEBAAIBAwQCAwEBAAAAAAAAAAECAxEhMUEyEoFxUZETImHw/8AAEQgAeAB4AwESAAISAAMSAP/aAAwDAQACEQMRAD8A+xB9UfJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgQVSFRFUFEAAAAAAAAAAAAAAAAAIEFUhURVIVEVSFRFUFEEBBQAAUFEAAB7pUp1pqEFe3/r3oMvg6gqVFTayqmN6upepJmKxrLDLbWdOkLETadIb4q6V16ylHBlGCvqfsl9I7lnN0tstp42ZpXFWOd2jl+NQuu7qn/wAo6l8rfconjX6hWlWwbRqLI/XLR2d6zG6d1y2jndwztirPGzR85VpTozcJq5rz0rQZfCNBVaLku1TxrV1r1PVW0WjWGGK2ltOkvLMTWdJb5a6116wwoPQPOICCgAAAAAACgoggIKAACgogAAPpIYoxu5VsONirKtQg+uK6Mtazo8k8y6yRpaXqjiEx28qx/mzYByOgAAAAHmeOMr+V7Djbayo0JvrkujHW8yEOqR5Wgnifhzkt41n8MAU9I8wgIKAAAAAAAKCiCAgoFAACiAAA7Wa0zs0+lHGn2o+Kz+DOJzekWh06raaS5Z+ja6NdZMknyvE/vuMNGyWifClPerttx5rUmreb1jrD01vW3VhFLT0l9AYT8K2XdmWrvF/6PM3/AGU/6Hpef9eT6n8srWtVGgsqSv5Vjk92cws7JaIY5Up60r9l5lWk24hvF6z1hta9a8z6YTS0dJLTaZ2mfSeJLsx8Fn8TiKUisOi9pvLkAAQEFAAAAAAAFIUQAQUUgAU38H2RVX3s1kJ4lzPMis8l9No5Rpip5bzw82XB869053wh1c0tXgtLMyL5PHaN5YFMU23naG7lSs9KgsiCWni/q8Z1LNptzKJFYrxCgAAAAAAOVWzUq6y4J6eEvqjqWLTXiUSa1tzCsLa7BOgnKOXDzjr0aTNG9MkW2naWDC2Oa78w3fMG/hCx9y+8gsiTxrleZ9R6meO/ltPLyu8lPHeOGgDQcAAAAAKCiCAgo9U4OpOMFxk0lvNrBselaY/ypS8rvUTOm7jLOlTTXZ3i74ZmnBU4RhHhFXI9GEzrOo2iNI0UAAAAAAAAAAAAAAAAealONWEoS4SV333HssTpOqJMaxor5mcHTlKL4xbT3G1hKHRtMv6UZeV3oeqJ13cYp/j4eXh3kjS0tMHY4AABQUQQEFG/gn35fG9qGCvfl8b2ozzdsfJm7Y+WmHu9GHu9MwDEbAAAAAAAAAAAAAAAAAoADDYW9+Pxraxhb34/GtrNsXb7MXb7YZe70Ze700AaDgAAH//Z";
+  const MONO = "linear-gradient(180deg, #A9AFBB 0%, #868B97 100%)";
+  const PINK = "linear-gradient(180deg, #FFB3C6 0%, #FF5D8F 100%)";
+
+  const HEART = {
+    app: "kakao", title: "❤️", body: "자기야..", avatar: { bg: PINK, text: "❤️", emoji: true },
+    followUp: { app: "kakao", title: "❤️", body: "나 할 말있어..", avatar: { bg: PINK, text: "❤️", emoji: true }, delay: 1500 },
+  };
+
+  const N = {
+    mom:      { app: "kakao", title: "엄마", body: "지금 거기 흰 화면 404 페이지 맞지? 엄마가 그 사이트 들어가면 이상한 알림 온다고 했잖아 빨리 나와서 밥 먹어!!", avatar: { bg: "linear-gradient(180deg,#7BD3A3,#3E9B6C)", text: "🌺", emoji: true } },
+    boss:     { app: "kakao", title: "팀장님", body: "팀장님이 지금 보고 있는 404 페이지의 디자인 시안 27개를 내일 오전 7시까지 요청했으며, 읽씹은 금지라고 강조함.", avatar: { bg: "linear-gradient(180deg,#6C757D,#343A40)", text: "👔", emoji: true }, summary: true },
+    ex:       { app: "kakao", title: "전애인", body: "자니...? 실수로 404 페이지 들어왔다가 네 생각나서", avatar: { bg: MONO, text: "전" } },
+    baemin:   { app: "kakao", title: "배달의민족", body: "[배민1] 주문하신 '민트초코 마라탕 (고수 5배 추가)'이 문 앞에 도착했습니다! 결제금액 404,000원", avatar: { bg: "#2AC1BC", text: "🛵", emoji: true } },
+    tim:      { app: "imessage", title: "Tim Cook", body: "iOS 27 뇌파 베타 테스터로 선정되었으며, 숨만 쉬어도 배터리가 12%씩 차감된다는 안내.", avatar: { bg: MONO, text: "TC" }, summary: true },
+    future:   { app: "imessage", title: "2036년의 나", body: "야!! 그 404 화면 절대 닫지 마!! 5초 뒤에 이번 주 로또 1등 번호 뜬다고!!", avatar: { bg: "linear-gradient(180deg,#7D7AFF,#3634A3)", text: "⏳", emoji: true } },
+    crush:    { app: "insta", title: "짝사랑하는_그사람", body: "회원님의 2017년 흑역사 셀카를 좋아합니다 ❤️", avatar: { bg: "linear-gradient(180deg,#FF8FA3,#FF4D6D)", text: "💘", emoji: true } },
+    story:    { app: "insta", comm: false, title: "Instagram", body: "best_friend님이 회원님의 친한 친구 스토리를 캡처해 단톡방(12명)에 공유했습니다 📸", summary: true },
+    live:     { app: "insta", comm: false, title: "Instagram", body: "🔴 회원님의 라이브 방송이 시작되었습니다. 팔로워 404명이 시청 중입니다.", },
+    yt1:      { app: "youtube", title: "침착맨", body: "🔴 [긴급생방] 404 흰 화면에 갇힌 시청자 구출 작전 · 404,404명 시청 중" },
+    yt2:      { app: "youtube", title: "YouTube", body: "오늘 쇼츠를 404분째 시청 중이며 도파민 수치가 위험 수준이라는 알림.", summary: true },
+    toss1:    { app: "toss", title: "토스", body: "4,040,000원 출금 완료 · 전국치킨협회기금으로 자동이체 되었어요. 잔액 404원" },
+    toss2:    { app: "toss", title: "토스", body: "누군가 회원님에게 404원을 보냈어요. 메모: 404 페이지 구경 잘 했어?" },
+    alert1:   { app: "emergency", title: "긴급 재난 문자", body: "[행정안전부] 오늘 21:45 전국 이불 밖 출입통제 발령. 이불 밖은 위험하오니 즉시 누워서 스마트폰만 보시기 바랍니다." },
+    alert2:   { app: "emergency", title: "긴급 재난 문자", body: "[기상청] 내일 출근·등교 시간대 회원님 집 현관문 앞 반경 5m에만 국지성 폭우가 예보되었습니다." },
+    airdrop:  { app: "ios", title: "AirDrop", body: "옆자리 모르는 사람이 '절대_열지마시오_진짜최종.jpg' 외 404장을 보내려고 합니다." },
+    pay:      { app: "ios", title: "Apple Pay", body: "방금 떠올린 '야식 먹고 싶다'를 인식해 황금올리브 3마리를 결제했다는 요약.", summary: true },
+  };
+
+  const POOL = Object.values(N);
+  const OPENING = [HEART, N.mom, N.tim, N.crush, N.alert1, N.yt1, N.toss1, N.boss, N.airdrop, N.future];
+
+  // ════════════════════════════════════════════
+  // 4. Banner manager
+  // ════════════════════════════════════════════
+  const layer = $("banner-layer");
+  const stack = $("stack");
+  const live = $("sr-live");
+  const SUMMARY_GLYPH = `<svg class="n-summary" viewBox="0 0 13 13" aria-hidden="true"><path fill="currentColor" d="M1 3h6.2v1.3H1zM1 6h4.6v1.3H1zM1 9h5.4v1.3H1z"/><path fill="currentColor" d="M10 2.2c.25 1.5 1.05 2.3 2.6 2.55-1.55.25-2.35 1.05-2.6 2.6-.25-1.55-1.05-2.35-2.6-2.6C8.95 4.5 9.75 3.7 10 2.2z"/></svg>`;
+
+  function showLayer() {
+    try { layer.hidePopover?.(); layer.showPopover?.(); } catch (_) {}
+  }
+  showLayer();
+
+  // Keep banners at native size even when the 404 page is pinch-zoomed
+  function syncLayer() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const s = vv.scale || 1;
+    layer.style.transform = s === 1 && !vv.offsetLeft && !vv.offsetTop
+      ? ""
+      : `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / s})`;
+  }
+  window.visualViewport?.addEventListener("resize", syncLayer);
+  window.visualViewport?.addEventListener("scroll", syncLayer);
+  const vvScale = () => window.visualViewport?.scale || 1;
+
+  function leadHtml(item, app) {
+    const comm = item.comm ?? app.comm;
+    if (comm && item.avatar) {
+      const a = item.app === "kakao" ? { img: KAKAO_PROFILE } : item.avatar;
+      const face = a.img
+        ? `<div class="avatar"><img src="${a.img}" alt=""></div>`
+        : `<div class="avatar${a.emoji ? " emoji" : ""}" style="background:${a.bg}">${esc(a.text)}</div>`;
+      return `<div class="n-lead" aria-hidden="true">
+          ${face}
+          <div class="badge">${app.icon}</div>
+        </div>`;
+    }
+    return `<div class="n-lead" aria-hidden="true"><div class="app-icon">${app.icon}</div></div>`;
+  }
+
+  function buildBanner(item, app) {
+    const el = document.createElement("div");
+    el.className = "banner";
+    el.dataset.app = item.app;
+    el.innerHTML = `
+      <div class="platter" role="button" tabindex="0" aria-label="${esc(`${app.name}, ${item.title}, ${item.body}`)}">
+        ${leadHtml(item, app)}
+        <div class="n-text">
+          <div class="n-head"><span class="n-title">${esc(item.title)}</span><span class="n-time">지금</span></div>
+          <p class="n-body">${item.summary ? SUMMARY_GLYPH : ""}${esc(item.body)}</p>
+        </div>
+      </div>`;
+    return el;
+  }
+
+  const liveBanners = () => [...stack.children].filter((b) => !b.dataset.leaving);
+  const frontPlatter = () => liveBanners().at(-1)?.querySelector(".platter") || null;
+
+  function layoutStack() {
+    const list = liveBanners();
+    list.forEach((b, i) => {
+      const depth = list.length - 1 - i;
+      b.style.setProperty("--d", Math.min(depth, 3));
+      b.dataset.depth = String(Math.min(depth, 3));
+      b.querySelector(".platter").tabIndex = depth === 0 ? 0 : -1;
+      if (depth >= 3) {
+        b.dataset.leaving = "1";
+        setTimeout(() => b.remove(), 320);
+      }
+    });
+    const front = frontPlatter();
+    if (front) stack.style.setProperty("--front-h", `${front.offsetHeight}px`);
+  }
+
+  // Stack-wide auto dismiss (iOS clears the whole stack together)
+  let stackTimer = 0;
+  let stackDuration = 5200;
+  let holding = false;
+  function armTimer(ms = stackDuration) {
+    clearTimeout(stackTimer);
+    if (holding) return;
+    stackTimer = setTimeout(() => dismissAll("timeout"), ms);
+  }
+
+  let dismissing = null;
+  function dismissAll(mode) {
+    if (dismissing) return dismissing;
+    const items = [...stack.children];
+    if (!items.length) return Promise.resolve();
+    clearTimeout(stackTimer);
+    const from = stack.style.transform || "translateY(0px)";
+    const h = (frontPlatter()?.offsetHeight || 80) + 60;
+    let anim;
+    if (reduceMotion.matches) {
+      anim = stack.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150 });
+    } else if (mode === "open") {
+      anim = stack.animate(
+        [{ transform: from, opacity: 1 }, { transform: "translateY(0) scale(0.92)", opacity: 0 }],
+        { duration: 230, easing: "cubic-bezier(0.3, 0, 0.2, 1)" }
+      );
+    } else {
+      anim = stack.animate(
+        [{ transform: from }, { transform: `translateY(${-h}px)` }],
+        mode === "swipe"
+          ? { duration: 240, easing: "cubic-bezier(0.15, 0.55, 0.35, 1)" }
+          : { duration: 360, easing: "cubic-bezier(0.45, 0, 0.6, 0.9)" }
+      );
+    }
+    dismissing = anim.finished.catch(() => {}).then(() => {
+      items.forEach((b) => b.remove());
+      stack.style.transform = "";
+      anim.cancel();
+      dismissing = null;
+    });
+    return dismissing;
+  }
+
+  function announce(text) {
+    live.textContent = "";
+    setTimeout(() => { live.textContent = text; }, 40);
+  }
+
+  const buzzEl = $("nginx-clip");
+  async function notify(item) {
+    if (dismissing) await dismissing;
+    const app = APPS[item.app] || APPS.ios;
+
+    Sound.play(item.app);
+    haptic(item.app);
+    if (item.app === "emergency") {
+      buzzEl.classList.remove("buzz");
+      void buzzEl.offsetWidth;
+      buzzEl.classList.add("buzz");
+    }
+
+    const el = buildBanner(item, app);
+    stack.appendChild(el);
+    layoutStack();
+
+    const platter = el.querySelector(".platter");
+    if (!reduceMotion.matches) {
+      platter.animate(
+        [{ transform: "translateY(calc(-100% - 24px))" }, { transform: "translateY(0)" }],
+        { duration: 640, easing: SPRING_DROP }
+      );
+      platter.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: "ease-out" });
+    }
+
+    stackDuration = Math.max(app.duration, item.app === "emergency" ? 9000 : 0);
+    armTimer();
+    announce(`${app.name}, ${item.title}: ${item.body}`);
+
+    if (item.followUp) setTimeout(() => notify(item.followUp), item.followUp.delay || 1400);
+  }
+
+  // ── Gestures: swipe up to dismiss, pull down rubber-bands, tap to "open"
+  let drag = null;
+  stack.addEventListener("pointerdown", (e) => {
+    const front = frontPlatter();
+    if (!front || !front.contains(e.target) || dismissing) return;
+    drag = { id: e.pointerId, y0: e.clientY, t0: performance.now(), dy: 0, moved: false, vy: 0, ly: e.clientY, lt: performance.now() };
+    try { front.setPointerCapture(e.pointerId); } catch (_) {}
+    holding = true;
+    clearTimeout(stackTimer);
+  });
+  stack.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const s = vvScale();
+    const raw = (e.clientY - drag.y0) * s;
+    if (Math.abs(raw) > 6) drag.moved = true;
+    const now = performance.now();
+    drag.vy = ((e.clientY - drag.ly) * s) / Math.max(1, now - drag.lt);
+    drag.ly = e.clientY; drag.lt = now;
+    drag.dy = raw;
+    const shown = raw < 0 ? raw : 56 * (1 - Math.exp(-raw / 110));
+    stack.style.transform = `translateY(${shown}px)`;
+  });
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    holding = false;
+    if (!cancelled && !d.moved && performance.now() - d.t0 < 600) {
+      dismissAll("open");
+    } else if (!cancelled && (d.dy < -40 || d.vy < -0.45)) {
+      dismissAll("swipe");
+    } else {
+      const from = stack.style.transform;
+      stack.style.transform = "";
+      if (from) stack.animate([{ transform: from }, { transform: "translateY(0)" }], { duration: 480, easing: SPRING_SOFT });
+      armTimer(2600);
+    }
+  }
+  stack.addEventListener("pointerup", (e) => endDrag(e, false));
+  stack.addEventListener("pointercancel", (e) => endDrag(e, true));
+  stack.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { holding = true; clearTimeout(stackTimer); } });
+  stack.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse" && !drag) { holding = false; armTimer(2600); } });
+  stack.addEventListener("keydown", (e) => {
+    if (!e.target.classList?.contains("platter")) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); dismissAll("open"); }
+    else if (e.key === "Escape") { dismissAll("swipe"); }
+  });
+
+  // ════════════════════════════════════════════
+  // 5. Auto schedule
+  // ════════════════════════════════════════════
+  let autoOn = true;
+  let autoTimer = 0;
+  let seq = 0;
+  let lastItem = null;
+  function nextItem() {
+    if (seq < OPENING.length) return OPENING[seq++];
+    let pick;
+    do { pick = POOL[Math.floor(Math.random() * POOL.length)]; } while (pick === lastItem && POOL.length > 1);
+    return pick;
+  }
+  function fire(item) {
+    lastItem = item;
+    notify(item);
+  }
+  function scheduleAuto(delay = rand(3200, 6400)) {
+    clearTimeout(autoTimer);
+    if (!autoOn || document.hidden) return;
+    autoTimer = setTimeout(() => {
+      const item = nextItem();
+      fire(item);
+      scheduleAuto(item.followUp ? rand(4600, 6800) : undefined);
+    }, delay);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) clearTimeout(autoTimer);
+    else scheduleAuto(rand(1200, 2400));
+  });
+  scheduleAuto(1600);
+
+  // ════════════════════════════════════════════
+  // 6. Hidden remote
+  // ════════════════════════════════════════════
+  const remote = $("remote");
+  const remoteAudio = $("remote-audio");
+  const TILES = [
+    ["kakao", "카카오톡"], ["imessage", "메시지"], ["insta", "Instagram"], ["youtube", "YouTube"],
+    ["toss", "토스"], ["emergency", "재난문자"], ["ios", "Apple"], ["heart", "❤️ 자기야"],
+    ["burst", "5연발"],
+  ];
+  $("tiles").innerHTML = TILES.map(([k, label]) => {
+    const icon = APPS[k] ? `<span class="app-icon">${APPS[k].icon}</span>`
+      : `<span class="app-icon glyph">${k === "heart" ? "❤️" : "🔥"}</span>`;
+    return `<button type="button" class="tile" data-fire="${k}">${icon}<span>${esc(label)}</span></button>`;
+  }).join("");
+
+  $("tiles").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-fire]");
+    if (!btn) return;
+    Sound.unlock();
+    const k = btn.dataset.fire;
+    if (k === "heart") return fire(HEART);
+    if (k === "burst") {
+      for (let i = 0; i < 5; i++) setTimeout(() => fire(nextItem()), i * 650);
+      return;
+    }
+    const choices = POOL.filter((n) => n.app === k);
+    fire(choices[Math.floor(Math.random() * choices.length)]);
+  });
+
+  function paintAudio() {
+    remoteAudio.innerHTML = Sound.running()
+      ? "소리 <b>켜짐</b> · 무음 모드에서도 울려요"
+      : "소리 꺼짐 · 화면을 한 번 탭하면 켜져요";
+  }
+  Sound.onChange(paintAudio);
+
+  function openRemote() {
+    if (remote.open) return;
+    paintAudio();
+    remote.showModal();
+    showLayer(); // keep banners above the sheet
+  }
+  $("remote-done").addEventListener("click", () => remote.close());
+  remote.addEventListener("click", (e) => { if (e.target === remote) remote.close(); });
+  $("auto-toggle").addEventListener("change", (e) => {
+    autoOn = e.target.checked;
+    if (autoOn) scheduleAuto(800); else clearTimeout(autoTimer);
+  });
+  $("sound-toggle").addEventListener("change", (e) => Sound.setEnabled(e.target.checked));
+
+  // Triple-tap empty page area
+  let taps = [];
+  addEventListener("pointerup", (e) => {
+    if (remote.open || stack.contains(e.target) || e.target === hapticLabel || hapticLabel.contains(e.target)) return;
+    const now = performance.now();
+    taps = taps.filter((t) => now - t < 700);
+    taps.push(now);
+    if (taps.length >= 3) { taps = []; openRemote(); }
+  });
+  const checkHash = () => { if (location.hash === "#ctl") openRemote(); };
+  addEventListener("hashchange", checkHash);
+  checkHash();
+
+  // Debug hook (console): __notif.fire("kakao") / await __notif.analyse("kakao")
+  window.__notif = {
+    fire: (app) => fire(POOL.find((n) => n.app === app) || HEART),
+    analyse: Sound.analyse,
+    apps: Object.keys(RECIPES),
+  };
+})();
+</script>
+</body>
+</html>
