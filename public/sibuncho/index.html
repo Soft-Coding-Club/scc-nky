@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
-  <meta name="description" content="24시간의 시·분·초를 RGB 색으로 보여주는 실시간 세계 시계">
-  <title>시분초 · RGB 세계시계</title>
+  <meta name="description" content="A real-time world clock that shows the hours, minutes and seconds of the day as RGB color">
+  <title>Sibuncho · RGB World Clock</title>
   <link id="dynamic-favicon" rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23000000'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -63,6 +63,12 @@
       color: #777;
       font-size: .78rem;
       letter-spacing: .16em;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .clock-face {
@@ -318,32 +324,35 @@
 <body>
   <main class="clock-shell">
     <header class="topbar">
-      <span class="brand">시분초 / RGB</span>
-      <button type="button" id="world-open">세계 시간</button>
+      <span class="brand" id="brand">SIBUNCHO / RGB</span>
+      <div class="top-actions">
+        <button type="button" id="lang-toggle">한국어</button>
+        <button type="button" id="world-open">World Time</button>
+      </div>
     </header>
 
-    <section class="clock-face" aria-label="현재 시각을 나타내는 색">
-      <div class="clock-orb" id="clock-orb" role="img" aria-label="00시 00분 00초의 색"></div>
+    <section class="clock-face" aria-label="Color representing the current time">
+      <div class="clock-orb" id="clock-orb" role="img" aria-label="Color of 00:00:00"></div>
     </section>
 
-    <section class="controls" aria-label="시, 분, 초 조절">
+    <section class="controls" aria-label="Adjust hour, minute and second">
       <div class="sliders">
         <label class="channel" for="hour-range">
           <output id="hour-output">00</output>
-          <input id="hour-range" type="range" min="0" max="23" step="1" value="0" aria-label="시">
+          <input id="hour-range" type="range" min="0" max="23" step="1" value="0" aria-label="Hour">
         </label>
         <label class="channel" for="minute-range">
           <output id="minute-output">00</output>
-          <input id="minute-range" type="range" min="0" max="59" step="1" value="0" aria-label="분">
+          <input id="minute-range" type="range" min="0" max="59" step="1" value="0" aria-label="Minute">
         </label>
         <label class="channel" for="second-range">
           <output id="second-output">00</output>
-          <input id="second-range" type="range" min="0" max="59" step="1" value="0" aria-label="초">
+          <input id="second-range" type="range" min="0" max="59" step="1" value="0" aria-label="Second">
         </label>
       </div>
       <output class="color-code" id="hex">#000000</output>
-      <button class="resume" type="button" id="resume" hidden>현재 시각</button>
-      <span class="sr-only" id="status" aria-live="polite">실시간</span>
+      <button class="resume" type="button" id="resume" hidden>Live time</button>
+      <span class="sr-only" id="status" aria-live="polite">Live</span>
     </section>
   </main>
 
@@ -351,21 +360,21 @@
     <div class="world-shell">
       <header class="world-head">
         <h2 class="world-title" id="world-title">COLOR WORLD</h2>
-        <button type="button" id="world-close" aria-label="세계 시간 닫기">닫기</button>
+        <button type="button" id="world-close" aria-label="Close world time">Close</button>
       </header>
 
       <div class="globe-wrap">
-        <canvas id="color-globe" width="420" height="420" role="img" aria-label="실제 위치별 현재 시간을 색으로 표현한 지구본"></canvas>
-        <output class="globe-readout" id="globe-readout" aria-live="polite">지구본을 드래그하거나 지역을 가리켜 보세요</output>
+        <canvas id="color-globe" width="420" height="420" role="img" aria-label="Globe showing the current time in color by location"></canvas>
+        <output class="globe-readout" id="globe-readout" aria-live="polite">Drag the globe or point at a region</output>
       </div>
 
       <div>
-        <section class="world-grid" id="world-grid" aria-label="추가한 지역의 시간 색"></section>
-        <section class="add-region" aria-label="지역 추가">
+        <section class="world-grid" id="world-grid" aria-label="Time colors of added regions"></section>
+        <section class="add-region" aria-label="Add a region">
           <form class="add-row" id="add-form">
-            <label class="sr-only" for="zone-select">추가할 지역</label>
+            <label class="sr-only" for="zone-select">Region to add</label>
             <select id="zone-select" required></select>
-            <button type="submit">추가</button>
+            <button type="submit">Add</button>
           </form>
         </section>
       </div>
@@ -408,6 +417,96 @@
       let hoveredGlobeLocation = null;
       const globeZoneColors = new Map();
       const timeFormatters = new Map();
+
+      const LANG_KEY = 'scc-nky-lang';
+      const zoneLabelsEn = {
+        'Asia/Seoul': 'Seoul',
+        'Asia/Tokyo': 'Tokyo',
+        'Asia/Shanghai': 'Shanghai',
+        'Asia/Hong_Kong': 'Hong Kong',
+        'Asia/Singapore': 'Singapore',
+        'Asia/Bangkok': 'Bangkok',
+        'Asia/Kolkata': 'New Delhi',
+        'Asia/Dubai': 'Dubai',
+        'Europe/Istanbul': 'Istanbul',
+        'Europe/Athens': 'Athens',
+        'Europe/Paris': 'Paris',
+        'Europe/London': 'London',
+        'Africa/Cairo': 'Cairo',
+        'Africa/Johannesburg': 'Johannesburg',
+        'America/New_York': 'New York',
+        'America/Toronto': 'Toronto',
+        'America/Chicago': 'Chicago',
+        'America/Denver': 'Denver',
+        'America/Los_Angeles': 'Los Angeles',
+        'America/Vancouver': 'Vancouver',
+        'America/Sao_Paulo': 'São Paulo',
+        'Pacific/Honolulu': 'Honolulu',
+        'Pacific/Auckland': 'Auckland',
+        'Australia/Sydney': 'Sydney',
+        'Australia/Perth': 'Perth',
+        'UTC': 'UTC'
+      };
+      const strings = {
+        en: {
+          docTitle: 'Sibuncho · RGB World Clock',
+          brand: 'SIBUNCHO / RGB',
+          worldOpen: 'World Time',
+          clockFaceAria: 'Color representing the current time',
+          controlsAria: 'Adjust hour, minute and second',
+          hourAria: 'Hour',
+          minuteAria: 'Minute',
+          secondAria: 'Second',
+          resume: 'Live time',
+          live: 'Live',
+          manual: 'Manual control',
+          orbAria: (hour, minute, second, hex) => `Color of ${hour}:${minute}:${second}, ${hex}`,
+          worldClose: 'Close',
+          worldCloseAria: 'Close world time',
+          globeAria: 'Globe showing the current time in color by location',
+          globeHint: 'Drag the globe or point at a region',
+          worldGridAria: 'Time colors of added regions',
+          addZoneAria: 'Add a region',
+          zoneSelectLabel: 'Region to add',
+          add: 'Add',
+          noZones: 'No more regions to add',
+          removeAria: label => `Remove ${label}`,
+          zoneColorAria: (label, hour, minute, second, hex) => `${label}, ${hour}:${minute}:${second}, ${hex}`
+        },
+        ko: {
+          docTitle: '시분초 · RGB 세계시계',
+          brand: '시분초 / RGB',
+          worldOpen: '세계 시간',
+          clockFaceAria: '현재 시각을 나타내는 색',
+          controlsAria: '시, 분, 초 조절',
+          hourAria: '시',
+          minuteAria: '분',
+          secondAria: '초',
+          resume: '현재 시각',
+          live: '실시간',
+          manual: '수동 조작 중',
+          orbAria: (hour, minute, second, hex) => `${hour}시 ${minute}분 ${second}초의 색, ${hex}`,
+          worldClose: '닫기',
+          worldCloseAria: '세계 시간 닫기',
+          globeAria: '실제 위치별 현재 시간을 색으로 표현한 지구본',
+          globeHint: '지구본을 드래그하거나 지역을 가리켜 보세요',
+          worldGridAria: '추가한 지역의 시간 색',
+          addZoneAria: '지역 추가',
+          zoneSelectLabel: '추가할 지역',
+          add: '추가',
+          noZones: '추가할 수 있는 지역이 없습니다',
+          removeAria: label => `${label} 삭제`,
+          zoneColorAria: (label, hour, minute, second, hex) => `${label}, ${hour}시 ${minute}분 ${second}초, ${hex}`
+        }
+      };
+      let lang;
+      try {
+        lang = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en';
+      } catch {
+        lang = 'en';
+      }
+      const zoneLabel = timeZone =>
+        (lang === 'en' ? zoneLabelsEn[timeZone] : zoneLabels[timeZone]) || timeZone;
 
       const zoneOptions = [
         ['Asia/Seoul', '서울', 37.5665, 126.9780],
@@ -501,7 +600,7 @@
       function setMainClock(hour, minute, second) {
         const color = colorFromTime(hour, minute, second);
         clockOrb.style.setProperty('--orb', color.css);
-        clockOrb.setAttribute('aria-label', `${pad(hour)}시 ${pad(minute)}분 ${pad(second)}초의 색, ${color.hex}`);
+        clockOrb.setAttribute('aria-label', strings[lang].orbAria(pad(hour), pad(minute), pad(second), color.hex));
         hexEl.value = color.hex.toUpperCase();
         hexEl.textContent = color.hex.toUpperCase();
 
@@ -514,7 +613,7 @@
 
       function setLive(next) {
         isLive = next;
-        statusEl.textContent = next ? '실시간' : '수동 조작 중';
+        statusEl.textContent = next ? strings[lang].live : strings[lang].manual;
         resumeButton.hidden = next;
       }
 
@@ -543,7 +642,7 @@
         selectedZones.forEach((timeZone, itemIndex) => {
           const [hour, minute, second] = zonedParts(now, timeZone);
           const color = colorFromTime(hour, minute, second + now.getMilliseconds() / 1000);
-          const label = zoneLabels[timeZone] || timeZone;
+          const label = zoneLabel(timeZone);
           let item = currentItems.get(timeZone);
           if (!item) {
             item = document.createElement('article');
@@ -557,9 +656,9 @@
           const labelNode = item.querySelector('strong');
           const removeButton = item.querySelector('.remove');
           colorNode.style.background = color.css;
-          colorNode.setAttribute('aria-label', `${label}, ${pad(hour)}시 ${pad(minute)}분 ${pad(second)}초, ${color.hex}`);
+          colorNode.setAttribute('aria-label', strings[lang].zoneColorAria(label, pad(hour), pad(minute), pad(second), color.hex));
           labelNode.textContent = label;
-          removeButton.setAttribute('aria-label', `${label} 삭제`);
+          removeButton.setAttribute('aria-label', strings[lang].removeAria(label));
           if (worldGrid.children[itemIndex] !== item) {
             worldGrid.insertBefore(item, worldGrid.children[itemIndex] || null);
           }
@@ -731,7 +830,7 @@
 
       function renderGlobeReadout(location, now = new Date()) {
         if (!location) {
-          globeReadout.value = '지구본을 드래그하거나 지역을 가리켜 보세요';
+          globeReadout.value = strings[lang].globeHint;
           globeReadout.textContent = globeReadout.value;
           return;
         }
@@ -756,8 +855,8 @@
       function refreshZoneSelect() {
         const available = zoneOptions.filter(([value]) => !selectedZones.includes(value));
         zoneSelect.innerHTML = available.length
-          ? available.map(([value, label]) => `<option value="${value}">${label} · ${value}</option>`).join('')
-          : '<option value="">추가할 수 있는 지역이 없습니다</option>';
+          ? available.map(([value]) => `<option value="${value}">${zoneLabel(value)} · ${value}</option>`).join('')
+          : `<option value="">${strings[lang].noZones}</option>`;
         zoneSelect.disabled = !available.length;
         $('#add-form button').disabled = !available.length;
       }
@@ -861,6 +960,43 @@
         }
       });
 
+      function applyLang() {
+        const s = strings[lang];
+        document.documentElement.lang = lang;
+        document.title = s.docTitle;
+        $('#brand').textContent = s.brand;
+        $('#world-open').textContent = s.worldOpen;
+        $('.clock-face').setAttribute('aria-label', s.clockFaceAria);
+        $('.controls').setAttribute('aria-label', s.controlsAria);
+        ranges[0].setAttribute('aria-label', s.hourAria);
+        ranges[1].setAttribute('aria-label', s.minuteAria);
+        ranges[2].setAttribute('aria-label', s.secondAria);
+        resumeButton.textContent = s.resume;
+        statusEl.textContent = isLive ? s.live : s.manual;
+        $('#world-close').textContent = s.worldClose;
+        $('#world-close').setAttribute('aria-label', s.worldCloseAria);
+        globe.setAttribute('aria-label', s.globeAria);
+        if (!hoveredGlobeLocation) {
+          globeReadout.value = s.globeHint;
+          globeReadout.textContent = s.globeHint;
+        }
+        $('#world-grid').setAttribute('aria-label', s.worldGridAria);
+        $('.add-region').setAttribute('aria-label', s.addZoneAria);
+        $('label[for="zone-select"]').textContent = s.zoneSelectLabel;
+        $('#add-form button[type="submit"]').textContent = s.add;
+        $('#lang-toggle').textContent = lang === 'en' ? '한국어' : 'EN';
+        refreshZoneSelect();
+        renderWorldTimes();
+        setMainClock(...ranges.map(input => Number(input.value)));
+      }
+
+      $('#lang-toggle').addEventListener('click', () => {
+        lang = lang === 'en' ? 'ko' : 'en';
+        try { localStorage.setItem(LANG_KEY, lang); } catch {}
+        applyLang();
+      });
+
+      applyLang();
       scheduleTick();
 
       window.sifuncho = Object.freeze({
@@ -886,8 +1022,8 @@
 
         register({
           name: 'set_clock_time',
-          title: '시계 시간 설정',
-          description: '시·분·초를 지정해 RGB 시계를 수동 모드로 설정합니다.',
+          title: 'Set clock time',
+          description: 'Sets the RGB clock to manual mode with the given hour, minute and second.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -902,7 +1038,7 @@
           execute(input) {
             const { hour, minute, second } = input || {};
             if (![hour, minute, second].every(Number.isInteger) || hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
-              throw new TypeError('hour, minute, second가 유효한 범위의 정수여야 합니다.');
+              throw new TypeError('hour, minute and second must be integers within their valid ranges.');
             }
             window.sifuncho.setTime(hour, minute, second);
             return { mode: 'manual', time: `${pad(hour)}:${pad(minute)}:${pad(second)}`, color: colorFromTime(hour, minute, second).hex };
@@ -911,8 +1047,8 @@
 
         register({
           name: 'resume_live_clock',
-          title: '실시간 시계로 복귀',
-          description: 'RGB 시계를 현재 지역의 실시간 시각으로 되돌립니다.',
+          title: 'Resume live clock',
+          description: 'Returns the RGB clock to the live current time.',
           inputSchema: { type: 'object', properties: {}, additionalProperties: false },
           annotations: { readOnlyHint: false, untrustedContentHint: false },
           execute() {

@@ -35,8 +35,19 @@ body {
   text-decoration: none;
 }
 
+.langToggle {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
 .projectName:hover,
-.projectName:focus-visible {
+.projectName:focus-visible,
+.langToggle:hover,
+.langToggle:focus-visible {
   background: #000;
   color: #fff;
   outline: none;
